@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useSimulationStore } from '../../store/simulationStore';
-import { TASK5_WAYPOINTS } from '../../robotics/task5';
+import { GRIPPER, TASK5_WAYPOINTS } from '../../robotics/task5';
 import { computeForwardKinematics } from '../../robotics/forwardKinematics';
 import { distance } from '../../robotics/task5';
 
@@ -20,6 +20,8 @@ export const TaskExecutionPanel: React.FC = () => {
     isGripperOpen,
     isHoldingBook,
     showRobotDebug,
+    showGraspDebug,
+    graspDebugLog,
     showJointLabels,
     showGraspRegion,
     showPath,
@@ -28,6 +30,7 @@ export const TaskExecutionPanel: React.FC = () => {
     pauseTask,
     resetTask,
     setShowRobotDebug,
+    setShowGraspDebug,
     setShowJointLabels,
     setShowGraspRegion,
     setShowPath,
@@ -89,8 +92,24 @@ export const TaskExecutionPanel: React.FC = () => {
           <button type="button" disabled={isTaskPlaying} onClick={planAutonomousPick}>PLAN</button>
           <button type="button" disabled={!autonomousPlan?.reachable || isTaskPlaying} onClick={executeAutonomousPick}>EXECUTE</button>
         </div>
-        <div className="task-state">PICK STATE: {pickStatus}</div>
-        <div className="paper-note">Drag the book on the tabletop to set a new pickup position.</div>
+      <div className="task-state">PICK STATE: {pickStatus}</div>
+      <div className="paper-note">Drag the book on the tabletop to set a new pickup position.</div>
+      <label className="path-toggle">
+        <input type="checkbox" checked={showGraspDebug} onChange={(event) => setShowGraspDebug(event.target.checked)} /> SHOW GRASP DEBUG
+      </label>
+      {showGraspDebug && (
+        <div className="readout-group" aria-label="Grasp debug log">
+          <div className="readout-label">TCP / BOOK / INNER FINGER GAP (m)</div>
+          <div className="task-coordinates">Book {simulatedObject.dimensions.x.toFixed(3)} × {simulatedObject.dimensions.y.toFixed(3)} × {simulatedObject.dimensions.z.toFixed(3)} · max opening {GRIPPER.openWidth.toFixed(3)} · finger thickness {GRIPPER.fingerThickness.toFixed(3)}</div>
+          {graspDebugLog.length === 0 && <div className="paper-note">No autonomous stages recorded yet.</div>}
+          {graspDebugLog.map((entry, index) => (
+            <div className="task-coordinates" key={`${entry.stage}-${index}`}>
+              {entry.stage}: TCP ({entry.tcp.x.toFixed(3)}, {entry.tcp.y.toFixed(3)}, {entry.tcp.z.toFixed(3)}) ·
+              BOOK ({entry.bookCenter.x.toFixed(3)}, {entry.bookCenter.y.toFixed(3)}, {entry.bookCenter.z.toFixed(3)}) · GAP {entry.fingerGap.toFixed(3)}
+            </div>
+          ))}
+        </div>
+      )}
       </div>
 
       <div className="task-buttons">

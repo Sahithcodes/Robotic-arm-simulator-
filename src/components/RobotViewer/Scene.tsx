@@ -7,15 +7,15 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useSimulationStore } from '../../store/simulationStore';
 import { BOOK, GRIPPER, TABLE, TASK5_WAYPOINTS } from '../../robotics/task5';
 import { RobotKinematicChain, BookMesh } from './RobotKinematicChain';
-import { clampObjectToTable } from '../../robotics/autonomousPlanner';
+import { clampObjectToTable, evaluatePickabilityCell, PickabilityCell } from '../../robotics/autonomousPlanner';
 
 export type CameraView = 'perspective' | 'top' | 'front' | 'right' | 'fitRobot' | 'fitTask';
 
 const cameraPresets: Record<CameraView, { position: [number, number, number]; target: [number, number, number] }> = {
   perspective: { position: [1.48, -2.0, 1.84], target: [0.46, -0.04, 0.76] },
-  top: { position: [0.8, -0.08, 2.95], target: [0.8, -0.08, 0.78] },
-  front: { position: [0.8, -2.35, 1.35], target: [0.8, -0.08, 0.76] },
-  right: { position: [3.0, -0.08, 1.35], target: [0.8, -0.08, 0.76] },
+  top: { position: [0.8, -0.08, 2.95], target: [0.60, 0, 0.78] },
+  front: { position: [0.8, -2.35, 1.35], target: [0.60, 0, 0.76] },
+  right: { position: [3.0, -0.08, 1.35], target: [0.60, 0, 0.76] },
   fitRobot: { position: [1.04, -1.08, 1.15], target: [0.18, -0.02, 0.68] },
   fitTask: { position: [2.05, -2.72, 2.02], target: [0.63, -0.08, 0.76] },
 };
@@ -265,19 +265,53 @@ const TableMesh: React.FC = () => {
 };
 
 const ReachabilityEnvelope: React.FC = () => {
+  const { dhTable, jointAngles, simulatedObject, isTaskPlaying } = useSimulationStore();
+  const [cells, setCells] = useState<PickabilityCell[]>([]);
+  const cache = useRef(new Map<string, PickabilityCell[]>());
+  useEffect(() => {
+    if (isTaskPlaying) return;
+    const yaw = simulatedObject.rotation.yaw;
+    const key = `${TABLE.width}:${TABLE.depth}:${TABLE.height}:${TABLE.topThickness}:${TABLE.center.x}:${TABLE.center.y}:${BOOK.size.x}:${BOOK.size.y}:${BOOK.size.z}:${dhTable.map((link) => `${link.a},${link.alpha},${link.d},${link.thetaMin},${link.thetaMax}`).join(';')}:${yaw.toFixed(4)}:${jointAngles.map((q) => q.toFixed(3)).join(',')}`;
+    const cached = cache.current.get(key);
+    if (cached) { setCells(cached); return; }
+    setCells([]);
+    const timer = window.setTimeout(() => {
+      const computed: PickabilityCell[] = [];
+      const points: { x: number; y: number; z: number }[] = [];
+      const step = 0.01;
+      const xmin = TABLE.center.x - TABLE.width / 2 + step / 2;
+      const xmax = TABLE.center.x + TABLE.width / 2;
+      const ymin = TABLE.center.y - TABLE.depth / 2 + step / 2;
+      const ymax = TABLE.center.y + TABLE.depth / 2;
+      for (let x = xmin; x < xmax; x += step) for (let y = ymin; y < ymax; y += step) points.push({ x, y, z: simulatedObject.position.z });
+      let index = 0;
+      let frame = 0;
+      const process = () => {
+        const end = Math.min(index + 2, points.length);
+        for (; index < end; index++) computed.push(evaluatePickabilityCell(dhTable, jointAngles, points[index], yaw));
+        if (index < points.length) frame = window.requestAnimationFrame(process);
+        else {
+          cache.current.set(key, computed);
+          if (cache.current.size > 12) cache.current.delete(cache.current.keys().next().value as string);
+          setCells(computed);
+        }
+      };
+      frame = window.requestAnimationFrame(process);
+      cleanupFrame = () => window.cancelAnimationFrame(frame);
+    }, 300);
+    let cleanupFrame = () => {};
+    return () => { window.clearTimeout(timer); cleanupFrame(); };
+  }, [dhTable, isTaskPlaying, jointAngles, simulatedObject.position.z, simulatedObject.rotation.yaw]);
+
   const geometry = useMemo(() => {
     const geometry = new THREE.BufferGeometry();
     const vertices: number[] = [];
     const indices: number[] = [];
-    const usableX = TABLE.width / 2 - BOOK.size.x / 2 - 0.012;
-    const usableY = TABLE.depth / 2 - BOOK.size.y / 2 - 0.012;
-    const step = 0.025;
-    const pickableHalfDepth = TABLE.depth * 0.29;
-    for (let x = -usableX; x < usableX; x += step) {
-      for (let y = -usableY; y < usableY; y += step) {
-        const centerX = TABLE.center.x + x + step / 2;
-        const centerY = TABLE.center.y + y + step / 2;
-        if (Math.abs(centerY - TABLE.center.y) > pickableHalfDepth || centerX > 0.78 || Math.hypot(centerX, centerY) < 0.25) continue;
+    const step = 0.01;
+    for (const cell of cells) {
+      if (cell.reachable) {
+        const x = cell.position.x - TABLE.center.x - step / 2;
+        const y = cell.position.y - TABLE.center.y - step / 2;
         const base = vertices.length / 3;
         vertices.push(x, y, 0, x + step, y, 0, x + step, y + step, 0, x, y + step, 0);
         indices.push(base, base + 1, base + 2, base, base + 2, base + 3);
@@ -287,7 +321,7 @@ const ReachabilityEnvelope: React.FC = () => {
     geometry.setIndex(indices);
     geometry.computeVertexNormals();
     return geometry;
-  }, []);
+  }, [cells]);
 
   useEffect(() => () => geometry.dispose(), [geometry]);
 

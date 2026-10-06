@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { computeForwardKinematics } from '../forwardKinematics';
 import { solveInverseKinematics } from '../inverseKinematics';
 import { INITIAL_DH_TABLE } from '../../robot/robotConfig';
-import { BOOK, HOME_JOINT_ANGLES, TABLE } from '../task5';
+import { BOOK, GRIPPER, HOME_JOINT_ANGLES, TABLE } from '../task5';
 import { degToRad } from '../transforms';
-import { createPickPlan } from '../autonomousPlanner';
+import { createPickPlan, createPickabilityGrid } from '../autonomousPlanner';
 import { useSimulationStore } from '../../store/simulationStore';
+import { fingerBookSideClearance, fingerBoxesIntersectTable, getFingerBoxCorners } from '../gripperGeometry';
 
 const configs = [
   [0, degToRad(-35), degToRad(65), 0, degToRad(-30), 0],
@@ -75,6 +76,63 @@ describe('robot TCP and pick workspace', () => {
     expect(index).toBeGreaterThanOrEqual(100);
     expect(passes).toBeGreaterThan(0);
   },120000);
+
+  it('proves the book is centered between the fingers at descend and close using full FK boxes', () => {
+    const yaw = 0;
+    const object = { ...BOOK.initialPosition };
+    const plan = createPickPlan(INITIAL_DH_TABLE, object, HOME_JOINT_ANGLES, undefined, yaw);
+    expect(plan.reachable, plan.reason).toBe(true);
+    const grasp = plan.waypoints.find((waypoint) => waypoint.id === 'GRASP');
+    expect(grasp).toBeDefined();
+    const fk = computeForwardKinematics(INITIAL_DH_TABLE, grasp!.jointAngles);
+    expect(distance(fk.tcpPose.position, object)).toBeLessThan(0.005);
+    const openClearance = fingerBookSideClearance(fk, yaw, GRIPPER.openWidth);
+    expect(openClearance).toBeGreaterThanOrEqual(0.003);
+    expect(openClearance).toBeCloseTo(0.019, 3);
+    expect(fingerBoxesIntersectTable(getFingerBoxCorners(fk, GRIPPER.openWidth))).toBe(false);
+
+    const closeClearance = fingerBookSideClearance(fk, yaw, GRIPPER.closedWidth);
+    expect(Math.abs(closeClearance)).toBeLessThanOrEqual(0.001);
+    expect(fingerBoxesIntersectTable(getFingerBoxCorners(fk, GRIPPER.closedWidth))).toBe(false);
+
+    const path = [HOME_JOINT_ANGLES, ...plan.waypoints.map((waypoint) => waypoint.jointAngles)];
+    for (let segment = 1; segment < path.length; segment++) {
+      const a = path[segment - 1], b = path[segment];
+      for (let sample = 0; sample <= 28; sample++) {
+        const q = a.map((value, i) => value + (b[i] - value) * sample / 28);
+        const sampleFk = computeForwardKinematics(INITIAL_DH_TABLE, q);
+        const opening = segment <= 2 || segment === path.length - 1 ? GRIPPER.openWidth : GRIPPER.closedWidth;
+        expect(fingerBoxesIntersectTable(getFingerBoxCorners(sampleFk, opening))).toBe(false);
+      }
+    }
+  });
+
+  it('marks 1 cm overlay cells only by complete pick plans at four book yaws', () => {
+    const yaws = [0, Math.PI / 4, Math.PI / 2, 3 * Math.PI / 4];
+    const counts: { yaw: number; fitPct: string; pickablePct: string; fit: number; pickable: number }[] = [];
+    for (const yaw of yaws) {
+      const cells = createPickabilityGrid(INITIAL_DH_TABLE, HOME_JOINT_ANGLES, yaw, 0.01);
+      const fitting = cells.filter((cell) => cell.fits);
+      const reachable = fitting.filter((cell) => cell.reachable);
+      for (const cell of cells) {
+        if (!cell.fits) {
+          expect(cell.reason).toBe('Outside table bounds');
+        } else if (cell.reachable) {
+          expect(cell.reason).toBe('Reachable');
+        } else {
+          expect(cell.reason).toMatch(/outside workspace|joint limit|orientation unreachable|collision|keep-out|invalid drop/i);
+        }
+      }
+      counts.push({
+        yaw: yaw * 180 / Math.PI,
+        fitPct: `${(fitting.length / cells.length * 100).toFixed(1)}%`,
+        pickablePct: `${(reachable.length / fitting.length * 100).toFixed(1)}%`,
+        fit: fitting.length,
+        pickable: reachable.length,
+      });
+    }
+    console.table(counts);
+  }, 300000);
 });
 
 describe('headless autonomous pick state machine',()=>{
@@ -96,6 +154,9 @@ describe('headless autonomous pick state machine',()=>{
       expect(end.simulatedObject.state).toBe('placed');
       expect(distance(end.simulatedObject.position,end.simulatedObject.targetPosition)).toBeLessThan(.01);
       expect(lowest).toBeGreaterThanOrEqual(TABLE.height);
+      expect(end.graspDebugLog.map((entry) => entry.stage)).toEqual(expect.arrayContaining([
+        'PLANNING', 'PREGRASP', 'OPEN', 'DESCEND', 'VERIFY', 'CLOSE', 'ATTACH', 'LIFT', 'TRANSPORT', 'LOWER', 'RELEASE', 'RETREAT', 'DONE',
+      ]));
     }
     console.table([{runs:positions.length,successRate:`${positions.length-failed.length}/${positions.length}`,worstIkResidualMm:'<2',failingPositions:failed.join('; ')||'none'}]);
     expect(failed).toEqual([]);

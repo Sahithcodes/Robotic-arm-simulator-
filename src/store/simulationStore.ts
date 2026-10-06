@@ -44,6 +44,8 @@ interface SimulationState {
   isGripperOpen: boolean;
   isHoldingBook: boolean;
   showRobotDebug: boolean;
+  showGraspDebug: boolean;
+  graspDebugLog: { stage: string; tcp: Vector3D; bookCenter: Vector3D; fingerGap: number }[];
   showJointLabels: boolean;
   showGraspRegion: boolean;
   showPath: boolean;
@@ -76,6 +78,7 @@ interface SimulationState {
   resetTask: () => void;
   tickTask: (deltaSeconds: number) => void;
   setShowRobotDebug: (enabled: boolean) => void;
+  setShowGraspDebug: (enabled: boolean) => void;
   setShowJointLabels: (enabled: boolean) => void;
   setShowGraspRegion: (enabled: boolean) => void;
   setShowPath: (enabled: boolean) => void;
@@ -88,6 +91,15 @@ const initialPickPlan = createPickPlan(INITIAL_DH_TABLE, BOOK.initialPosition, d
 const GRASP_TOLERANCE = 0.035;
 const END_EFFECTOR_TOLERANCE = 0.018;
 const AUTONOMOUS_SEGMENT_SECONDS = 1.5;
+
+function graspDebugEntry(stage: string, fk: FKResult, object: SimulatedObject, gripperOpen: boolean) {
+  return {
+    stage,
+    tcp: { ...fk.tcpPose.position },
+    bookCenter: { ...object.position },
+    fingerGap: (gripperOpen ? GRIPPER.openWidth : GRIPPER.closedWidth) - GRIPPER.fingerThickness,
+  };
+}
 
 function worldOffsetToLocal(matrix: FKResult['endEffectorPose']['rotationMatrix'], worldOffset: Vector3D): Vector3D {
   return {
@@ -124,6 +136,8 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
   isGripperOpen: true,
   isHoldingBook: false,
   showRobotDebug: false,
+  showGraspDebug: false,
+  graspDebugLog: [],
   showJointLabels: false,
   showGraspRegion: false,
   showPath: true,
@@ -187,6 +201,7 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
       taskMode: 'autonomous', simulatorMode: 'autonomous', autonomousPlan: plan, isTaskPlaying: false,
       taskPhase: plan.reachable ? 'PLANNED' : 'UNREACHABLE', trajectoryTime: 0,
       autonomousPhase: plan.reachable ? 'PLANNED' : 'UNREACHABLE', pickStatus: plan.reachable ? 'PLANNING: READY' : `FAILED: ${plan.reason}`,
+      graspDebugLog: [...state.graspDebugLog, graspDebugEntry('PLANNING', state.fkResult, state.simulatedObject, state.isGripperOpen)],
       simulatedObject: { ...state.simulatedObject, isGrasped: false, isAttached: false, graspState: 'on-table', state: 'onTable', reachability: { reachable: plan.reachable, reason: plan.reason } },
     });
   },
@@ -199,6 +214,7 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
       taskPhase: 'MOVING TO PRE-GRASP', autonomousPhase: 'MOVING TO PRE-GRASP', pickStatus: 'PREGRASP',
       autonomousWaypointIndex: 0, autonomousSegmentElapsed: 0,
       autonomousStartAngles: [...state.jointAngles], isGripperOpen: true, isHoldingBook: false,
+      graspDebugLog: [...state.graspDebugLog, graspDebugEntry('PREGRASP', state.fkResult, state.simulatedObject, true)],
       heldObjectLocalOffset: TCP_OFFSET,
       heldRotationOffset: { roll: 0, pitch: 0, yaw: 0 },
       simulatedObject: { ...state.simulatedObject, isGrasped: false, isAttached: false, graspState: 'on-table', state: 'onTable' },
@@ -308,6 +324,7 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
       autonomousPlan: null,
       autonomousPhase: 'IDLE',
       pickStatus: 'IDLE',
+      graspDebugLog: [],
       autonomousWaypointIndex: 0,
       autonomousSegmentElapsed: 0,
       autonomousStartAngles: HOME_JOINT_ANGLES,
@@ -330,6 +347,16 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
     const state = get();
     if (!state.isTaskPlaying || state.taskPhase === 'COMPLETE' || state.taskPhase === 'ERROR') return;
 
+    if (state.taskMode === 'autonomous' && state.graspDebugLog[state.graspDebugLog.length - 1]?.stage !== state.pickStatus) {
+      const fingerGap = (state.isGripperOpen ? GRIPPER.openWidth : GRIPPER.closedWidth) - GRIPPER.fingerThickness;
+      set({ graspDebugLog: [...state.graspDebugLog, {
+        stage: state.pickStatus,
+        tcp: { ...state.fkResult.tcpPose.position },
+        bookCenter: { ...state.simulatedObject.position },
+        fingerGap,
+      }] });
+    }
+
     if (state.taskMode === 'autonomous' && state.autonomousPlan?.reachable) {
       const plan = state.autonomousPlan;
       const index = state.autonomousWaypointIndex;
@@ -339,6 +366,7 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
         return;
       }
       if (index === 1 && state.pickStatus === 'OPEN') set({ pickStatus: 'DESCEND' });
+      if (index === 2 && state.pickStatus === 'ATTACH') set({ pickStatus: 'LIFT' });
       if (index === 5 && state.pickStatus === 'RELEASE') set({ pickStatus: 'RETREAT' });
       if (index === 1 && state.pickStatus === 'VERIFY') {
         const contactError = distance(state.fkResult.tcpPose.position, state.simulatedObject.position);
@@ -422,7 +450,8 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
       }
 
       if (reached && index === plan.waypoints.length - 1) {
-        set({ ...baseUpdate, isTaskPlaying: false, taskPhase: 'COMPLETE', autonomousPhase: 'COMPLETE', pickStatus: 'DONE' });
+        set({ ...baseUpdate, isTaskPlaying: false, taskPhase: 'COMPLETE', autonomousPhase: 'COMPLETE', pickStatus: 'DONE',
+          graspDebugLog: [...state.graspDebugLog, graspDebugEntry('DONE', fk, state.simulatedObject, state.isGripperOpen)] });
         return;
       }
 
@@ -528,6 +557,7 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
   },
 
   setShowRobotDebug: (enabled) => set({ showRobotDebug: enabled }),
+  setShowGraspDebug: (enabled) => set({ showGraspDebug: enabled }),
   setShowJointLabels: (enabled) => set({ showJointLabels: enabled }),
   setShowGraspRegion: (enabled) => set({ showGraspRegion: enabled }),
   setShowPath: (enabled) => set({ showPath: enabled }),

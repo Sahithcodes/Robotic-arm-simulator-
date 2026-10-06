@@ -85,7 +85,7 @@ export const TABLE = {
 
 export const BOOK = {
   size: { x: 0.1, y: 0.08, z: 0.025 },
-  initialPosition: { x: 0.68, y: -0.04, z: TABLE.height + TABLE.topThickness / 2 + 0.025 / 2 },
+  initialPosition: { x: 0.60, y: 0, z: TABLE.height + TABLE.topThickness / 2 + 0.025 / 2 },
 };
 
 export const GRIPPER = {
