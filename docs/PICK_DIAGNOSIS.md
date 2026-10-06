@@ -26,7 +26,7 @@
 | 135° | 44.0% (1,056/2,400) | 64.2% (678/1,056) |
 
 - The 2 cm kinematic map is generated and printed by [reachabilityMap.test.ts](../src/robotics/__tests__/reachabilityMap.test.ts). It searches x=`0.10…1.00 m`, y=`-0.60…0.60 m`, at book resting height for 0°, 45°, 90°, and 135° yaw, with tool-Z within 5° of down. Near the base, the explicit keep-out accounts for 159 of 2,806 grid cells per yaw. Remaining IK failures are classified as joint-limit hits or non-convergence. Full-planner grid cells additionally retain reasons such as table collision, outside bounds, and workspace/orientation failure.
-- The rectangular candidate is only 45.6–64.2% pickable among valid placements depending on yaw. It does not give a reliably mostly-pickable rectangular surface across all book orientations. A better matching shape is an **annular-sector tabletop** around the positive-X reachable arc: inner radius about `0.49 m`, outer radius about `0.80 m`, with the pedestal keep-out left open. This shape is proposed but not implemented pending the table-shape decision.
+- The rectangular candidate is only 45.6–64.2% pickable among valid placements depending on yaw. It does not give a reliably mostly-pickable rectangular surface across all book orientations. A better matching shape to evaluate is an **annular-sector tabletop** centered on the base axis, roughly `0.60–0.78 m` in radius and focused on the positive-X side. The inner radius avoids the measured PRE-GRASP/table collision around x=`0.54 m`; the outer radius stays inside the measured top-down reach. Exact angular bounds still need a full planner sweep. This shape is proposed but not implemented pending the table-shape decision.
 
 ## Current pick implementation and checks
 
