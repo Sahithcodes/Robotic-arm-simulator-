@@ -1,0 +1,7 @@
+{
+    "innerR":  0.516,
+    "outerR":  0.834,
+    "halfSpanDeg":  15,
+    "areaM2":  0.112413,
+    "derivedFrom":  "fullPlannerSweep.test.ts; 1 cm XY grid; all-yaw intersection at 0,30,60,90,120,150,180 degrees; sector candidates sampled every 1 cm radius and 2.5 degrees; book half-diagonal radial and side inset"
+}
