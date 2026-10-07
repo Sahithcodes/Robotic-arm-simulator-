@@ -114,6 +114,7 @@ body {
 .paper-note, .error-readout, .waypoint-readout, .path-toggle { color: #9da8ad; font: 10px ui-monospace, monospace; line-height: 1.5; }
 .paper-note { padding-top: 7px; }
 .task-coordinates { border-block: 1px solid #414a51; padding: 7px 0; color: #aeb8bc; font: 10px ui-monospace, monospace; line-height: 1.55; }.task-coordinates b { color: #d39a50; display: inline-block; width: 24px; }
+.task-coordinates { white-space: nowrap; }
 .task-sequence { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; padding: 9px 0; border-bottom: 1px solid #414a51; }
 .task-sequence span { color: #7f8a90; font: 10px ui-monospace, monospace; }.task-sequence .current { color: #e0c08a; }.task-sequence .done { color: #b9c8b8; }
 .waypoint-readout { padding: 12px 0; }.waypoint-readout strong { float: right; color: #e0c08a; font-size: 16px; }.coordinates { color: #d4dadd; margin-top: 5px; }

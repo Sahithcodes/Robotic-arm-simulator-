@@ -6,6 +6,14 @@ import { GRIPPER, TASK5_WAYPOINTS } from '../../robotics/task5';
 import { computeForwardKinematics } from '../../robotics/forwardKinematics';
 import { distance } from '../../robotics/task5';
 
+function reachabilityMessage(reason: string): string {
+  if (/keep-out|base|link-vs-base/i.test(reason)) return 'Too close to the robot base';
+  if (/outside workspace/i.test(reason)) return 'Too far';
+  if (/joint limit|orientation unreachable/i.test(reason)) return 'Joint limit';
+  if (/table|bounds/i.test(reason)) return 'Table collision';
+  return reason === 'Reachable' ? 'Ready to plan' : 'Plan required';
+}
+
 export const TaskExecutionPanel: React.FC = () => {
   const {
     taskPhase,
@@ -49,7 +57,7 @@ export const TaskExecutionPanel: React.FC = () => {
     <section className="control-panel">
       <div className="panel-heading">
         <h2>TASK 5: PICK &amp; PLACE</h2>
-        <span className="task-state">{taskPhase}</span>
+        <span className="task-state">{pickStatus}</span>
       </div>
       <label className="readout-label" htmlFor="simulator-mode">MODE</label>
       <select id="simulator-mode" value={simulatorMode} onChange={(event) => setSimulatorMode(event.target.value as 'manual' | 'predefined' | 'autonomous')} className="technical-button">
@@ -84,12 +92,12 @@ export const TaskExecutionPanel: React.FC = () => {
         </div>
         <div className="error-readout">
           Reachability: <b style={{ color: simulatedObject.reachability.reachable ? '#91bd91' : '#d39a50' }}>
-            {simulatedObject.reachability.reachable ? 'REACHABLE' : autonomousPlan ? 'OBJECT OUT OF REACH' : 'NOT PLANNED'}
+            {simulatedObject.reachability.reachable ? 'Reachable' : autonomousPlan ? 'Unreachable' : 'Not planned'}
           </b>
-          <div>{simulatedObject.reachability.reason}</div>
+          <div>{reachabilityMessage(simulatedObject.reachability.reason)}</div>
         </div>
         <div className="task-buttons">
-          <button type="button" disabled={isTaskPlaying} onClick={planAutonomousPick}>PLAN</button>
+          <button type="button" disabled={isTaskPlaying || !simulatedObject.reachability.reachable} onClick={planAutonomousPick}>PLAN</button>
           <button type="button" disabled={!autonomousPlan?.reachable || isTaskPlaying} onClick={executeAutonomousPick}>EXECUTE</button>
         </div>
       <div className="task-state">PICK STATE: {pickStatus}</div>

@@ -44,6 +44,11 @@
 
 ## Remaining limits
 
+- Full planner sweep and structured failure instrumentation were added on 2026-10-07. The 1 cm sweep covers x=0.10–1.00 m, y=-0.60–0.60 m, and seven yaws; raw results are in `src/robotics/generated/sweep.json`. Tilt fallback samples 0° through 30° after strict top-down attempts. The derived all-yaw annular sector is inner radius 0.516 m, outer radius 0.834 m, half-span 15°, area 0.112413 m²; see `src/robotics/generated/sector.json`.
+- Structured diagnostics attribute `(0.54, 0.00)` to the upper arm intersecting the tabletop clearance plane at PRE-GRASP (5.97–6.34 mm penetration at tested yaws); this is a rendered-geometry table collision. At `(0.366, -0.114)`, the table bounds reject yaws 45° and 135°. At yaws 0°/90°, top-down and 10°/20° tilt attempts hit the table clearance plane; 20°/30° attempts also find upper-arm vs pedestal hits with 12.53–14.90 mm modeled penetration. The constant-radius pedestal model exceeds the rendered taper near its top; it remains unchanged, as requested. Full details are in `src/robotics/generated/caseDiagnostics.json`.
+- No table mesh, UI, or overlay changes were made for the full-planner sweep task. Browser appearance has not been verified visually.
+- No browser automation or headless browser executable is installed in the project environment, so screenshots could not be verified without adding tooling. Visual appearance has not been confirmed in a browser.
+
 - Link/pedestal collision uses sampled link centerlines against a simplified column cylinder; it does not model every joint housing or full self-collision. Table/link/finger checks are also sampled geometric approximations.
 - The enlarged rectangle still has substantial unreachable cells, particularly at 90° yaw. A sector-shaped table is the suggested next geometry step.
 - No browser automation or headless browser executable is installed in the project environment, so screenshots could not be verified without adding tooling. Visual appearance has not been confirmed in a browser.

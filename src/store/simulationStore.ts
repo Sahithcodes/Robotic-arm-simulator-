@@ -165,7 +165,7 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
       simulatedObject: { ...state.simulatedObject, position, graspState: 'on-table', state: 'onTable', isGrasped: false, isAttached: false, reachability: { reachable: false, reason: 'Position changed; plan again' } },
       autonomousPlan: null,
       isTaskPlaying: false,
-      taskPhase: state.taskMode === 'autonomous' ? 'IDLE' : state.taskPhase,
+      taskPhase: 'IDLE', autonomousPhase: 'IDLE', pickStatus: 'IDLE',
     });
   },
 
@@ -174,7 +174,7 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
     if (state.isTaskPlaying) return;
     const rotation = { ...state.simulatedObject.rotation, yaw: degToRad(yawDegrees) };
     const plan = createPickPlan(state.dhTable, state.simulatedObject.position, state.jointAngles, state.simulatedObject.targetPosition, rotation.yaw);
-    set({ autonomousPlan: plan, simulatedObject: { ...state.simulatedObject, rotation, reachability: { reachable: plan.reachable, reason: plan.reason } } });
+    set({ autonomousPlan: null, taskPhase: 'IDLE', autonomousPhase: 'IDLE', pickStatus: 'IDLE', simulatedObject: { ...state.simulatedObject, rotation, reachability: { reachable: plan.reachable, reason: plan.reason } } });
   },
 
   setObjectDragging: (isBeingDragged) => set((state) => ({
