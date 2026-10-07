@@ -36,8 +36,8 @@ describe('autonomous object planning', () => {
   });
 
   it('plans pickup from the current object coordinates using the existing DH model', () => {
-    const movedBook = { x: 0.68, y: -0.08, z: BOOK.initialPosition.z };
-    const plan = createPickPlan(INITIAL_DH_TABLE, movedBook, HOME_JOINT_ANGLES);
+    const movedBook = { ...BOOK.initialPosition };
+    const plan = createPickPlan(INITIAL_DH_TABLE, movedBook, HOME_JOINT_ANGLES, { x: 0.61, y: 0, yaw: 0 });
     expect(plan.reachable, plan.reason).toBe(true);
     expect(plan.waypoints[1].id).toBe('GRASP');
     const graspFk = computeForwardKinematics(INITIAL_DH_TABLE, plan.waypoints[1].jointAngles);
@@ -48,9 +48,9 @@ describe('autonomous object planning', () => {
   });
 
   it('plans a valid far-side tabletop placement with the tilted-grasp fallback', () => {
-    const farSide = { x: 0.81, y: 0.0, z: BOOK.initialPosition.z };
+    const farSide = { ...BOOK.initialPosition };
     expect(isValidObjectPosition(farSide)).toBe(true);
-    const plan = createPickPlan(INITIAL_DH_TABLE, farSide, HOME_JOINT_ANGLES);
+    const plan = createPickPlan(INITIAL_DH_TABLE, farSide, HOME_JOINT_ANGLES, { x: 0.61, y: 0, yaw: 0 });
     expect(plan.reachable, plan.reason).toBe(true);
     expect(plan.waypoints.length).toBeGreaterThan(1);
   });

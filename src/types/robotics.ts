@@ -30,7 +30,6 @@ export type SimulatedObject = {
   isBeingDragged: boolean;
   isGrasped: boolean;
   isAttached: boolean;
-  targetPosition: Vector3D;
   reachability: { reachable: boolean; reason: string };
 };
 

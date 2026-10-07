@@ -2,12 +2,13 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { OrbitControls } from '@react-three/drei';
+import { Html, OrbitControls } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useSimulationStore } from '../../store/simulationStore';
 import { BOOK, GRIPPER, TABLE, TASK5_WAYPOINTS } from '../../robotics/task5';
 import { RobotKinematicChain, BookMesh } from './RobotKinematicChain';
-import { clampObjectToTable, evaluatePickabilityCell, PickabilityCell } from '../../robotics/autonomousPlanner';
+import { clampObjectToTable, createPickPlan, evaluatePickabilityCell, PickabilityCell } from '../../robotics/autonomousPlanner';
+import { rayToTableXY } from '../../robotics/tableInteraction';
 
 export type CameraView = 'perspective' | 'top' | 'front' | 'right' | 'fitRobot' | 'fitTask';
 
@@ -25,10 +26,13 @@ export const Scene: React.FC<{ cameraView: CameraView; cameraRevision: number; c
   const dragPointerRef = useRef<number | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [ghostPosition, setGhostPosition] = useState<{x:number;y:number}|null>(null);
+  const [ghostValid, setGhostValid] = useState(false);
   const { camera, gl } = useThree();
   const {
     fkResult,
     isGripperOpen,
+    gripperCloseWidth,
     showRobotDebug,
     showJointLabels,
     showGraspRegion,
@@ -42,6 +46,10 @@ export const Scene: React.FC<{ cameraView: CameraView; cameraRevision: number; c
     setObjectSelected,
     checkObjectReachability,
     isTaskPlaying,
+    dropTarget,
+    setDropTarget,
+    destinationPickArmed,
+    setDestinationPickArmed,
   } = useSimulationStore();
 
   const finishObjectDrag = useCallback((pointerId?: number) => {
@@ -64,6 +72,28 @@ export const Scene: React.FC<{ cameraView: CameraView; cameraRevision: number; c
       cancelDragRef.current = () => {};
     };
   }, [cancelDragRef, finishObjectDrag]);
+
+  useEffect(() => {
+    if (destinationPickArmed) {
+      if (controlsRef.current) controlsRef.current.enabled = false;
+      gl.domElement.style.cursor = 'crosshair';
+      const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape') setDestinationPickArmed(false); };
+      window.addEventListener('keydown', onKeyDown);
+      return () => { window.removeEventListener('keydown', onKeyDown); if (controlsRef.current) controlsRef.current.enabled = true; gl.domElement.style.cursor = ''; };
+    }
+    setGhostPosition(null);
+  }, [destinationPickArmed, gl, setDestinationPickArmed]);
+
+  useEffect(() => {
+    if (!destinationPickArmed || !ghostPosition) return;
+    const timer = window.setTimeout(() => {
+      const state = useSimulationStore.getState();
+      const target = { ...ghostPosition, yaw: state.dropTarget?.yaw ?? 0 };
+      const plan = createPickPlan(state.dhTable, state.simulatedObject.position, state.jointAngles, { ...target, yaw: target.yaw * Math.PI / 180 }, state.simulatedObject.rotation.yaw);
+      setGhostValid(plan.reachable);
+    }, 100);
+    return () => window.clearTimeout(timer);
+  }, [destinationPickArmed, ghostPosition]);
 
   useFrame((_, delta) => tickTask(Math.min(delta, 0.05)));
 
@@ -113,14 +143,24 @@ export const Scene: React.FC<{ cameraView: CameraView; cameraRevision: number; c
 
       <TableMesh />
       <ReachabilityEnvelope />
-      <mesh position={[simulatedObject.targetPosition.x, simulatedObject.targetPosition.y, simulatedObject.targetPosition.z + 0.012]}>
-        <sphereGeometry args={[0.018, 16, 12]} />
-        <meshStandardMaterial color={simulatedObject.reachability.reachable ? '#78c98a' : '#cf9861'} emissive={simulatedObject.reachability.reachable ? '#174c28' : '#4a2d14'} />
-      </mesh>
+      {destinationPickArmed && <mesh position={[TABLE.center.x, TABLE.center.y, TABLE.height + 0.0005]} onPointerMove={(event) => { event.stopPropagation(); const point = rayToTableXY({ origin: event.ray.origin, direction: event.ray.direction }, TABLE.height); if (point) setGhostPosition(point); }} onPointerDown={(event) => { event.stopPropagation(); const point = rayToTableXY({ origin: event.ray.origin, direction: event.ray.direction }, TABLE.height); if (point) { const state = useSimulationStore.getState(); setDropTarget({ ...point, yaw: state.dropTarget?.yaw ?? 0 }, true); setDestinationPickArmed(false); } }}>
+        <planeGeometry args={[TABLE.width, TABLE.depth]} /><meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>}
+      {destinationPickArmed && ghostPosition && <group position={[ghostPosition.x, ghostPosition.y, TABLE.height + BOOK.size.z / 2 + 0.003]} rotation={[0,0,(dropTarget?.yaw ?? 0)*Math.PI/180]} raycast={() => null}>
+        <mesh raycast={() => null}><boxGeometry args={[BOOK.size.x, BOOK.size.y, 0.004]} /><meshBasicMaterial color={ghostValid ? '#49d877' : '#ed5f62'} wireframe /></mesh>
+        <mesh raycast={() => null} position={[0,0,0.003]}><planeGeometry args={[BOOK.size.x, BOOK.size.y]} /><meshBasicMaterial color={ghostValid ? '#49d877' : '#ed5f62'} transparent opacity={0.16} side={THREE.DoubleSide} /></mesh>
+      </group>}
+      {dropTarget && <group position={[dropTarget.x, dropTarget.y, TABLE.height + BOOK.size.z / 2 + 0.002]} rotation={[0, 0, dropTarget.yaw * Math.PI / 180]} onPointerDown={destinationPickArmed ? undefined : (event) => { if (isTaskPlaying) return; event.stopPropagation(); event.nativeEvent.preventDefault(); event.nativeEvent.stopImmediatePropagation(); dragPointerRef.current = event.pointerId; controlsRef.current && (controlsRef.current.enabled = false); (event.target as unknown as { setPointerCapture(pointerId: number): void }).setPointerCapture(event.pointerId); }} onPointerMove={destinationPickArmed ? undefined : (event) => { if (dragPointerRef.current !== event.pointerId) return; event.stopPropagation(); const point = rayToTableXY({ origin: event.ray.origin, direction: event.ray.direction }, TABLE.height); if(point) setDropTarget({...dropTarget,x:point.x,y:point.y}); }} onPointerUp={destinationPickArmed ? undefined : (event) => { if(dragPointerRef.current !== event.pointerId) return; dragPointerRef.current=null; if(controlsRef.current) controlsRef.current.enabled=true; setDropTarget(useSimulationStore.getState().dropTarget,true); (event.target as unknown as { releasePointerCapture(pointerId:number):void }).releasePointerCapture(event.pointerId); }}>
+        <mesh raycast={destinationPickArmed ? () => null : undefined}><boxGeometry args={[BOOK.size.x, BOOK.size.y, 0.004]} /><meshBasicMaterial color="#42d9e8" wireframe /></mesh>
+        <mesh raycast={destinationPickArmed ? () => null : undefined} position={[0,0,0.006]}><planeGeometry args={[BOOK.size.x, BOOK.size.y]} /><meshBasicMaterial color="#42d9e8" transparent opacity={0.12} side={THREE.DoubleSide} /></mesh>
+        <Html position={[0, 0, 0.02]} center distanceFactor={1.5} style={{ color: '#42d9e8', fontSize: '11px', fontWeight: 700, pointerEvents: 'none' }}>PLACE</Html>
+      </group>}
       <group
+          raycast={destinationPickArmed ? () => null : undefined}
           position={[simulatedObject.position.x, simulatedObject.position.y, simulatedObject.position.z]}
           rotation={[simulatedObject.rotation.roll, simulatedObject.rotation.pitch, simulatedObject.rotation.yaw]}
           onPointerDown={(event) => {
+            if (destinationPickArmed) return;
             if (isTaskPlaying) { event.stopPropagation(); return; }
             if (event.button !== 0) {
               event.stopPropagation();
@@ -159,10 +199,12 @@ export const Scene: React.FC<{ cameraView: CameraView; cameraRevision: number; c
             if (!event.buttons) finishObjectDrag(event.pointerId);
           }}
           onPointerOver={() => {
+            if (destinationPickArmed) return;
             setIsHovered(true);
             if (!isDragging) gl.domElement.style.cursor = 'grab';
           }}
           onPointerOut={() => {
+            if (destinationPickArmed) return;
             setIsHovered(false);
             if (!isDragging) setObjectSelected(false);
             if (!isDragging) gl.domElement.style.cursor = '';
@@ -170,7 +212,7 @@ export const Scene: React.FC<{ cameraView: CameraView; cameraRevision: number; c
       >
           <BookMesh highlighted={isHovered || isDragging || simulatedObject.isSelected || simulatedObject.isAttached} />
       </group>
-      <mesh position={[simulatedObject.position.x, simulatedObject.position.y, TABLE.height + 0.004]}>
+      <mesh raycast={destinationPickArmed ? () => null : undefined} position={[simulatedObject.position.x, simulatedObject.position.y, TABLE.height + 0.004]}>
         <ringGeometry args={[0.064, 0.071, 32]} />
         <meshBasicMaterial
           color={simulatedObject.reachability.reachable ? '#6bc982' : simulatedObject.reachability.reason.includes('Position changed') ? '#d8b05c' : '#d36a60'}
@@ -216,6 +258,7 @@ export const Scene: React.FC<{ cameraView: CameraView; cameraRevision: number; c
       <RobotKinematicChain
         fkResult={fkResult}
         isGripperOpen={isGripperOpen}
+        closeWidth={gripperCloseWidth}
         showRobotDebug={showRobotDebug}
         showJointLabels={showJointLabels}
       />
@@ -265,13 +308,13 @@ const TableMesh: React.FC = () => {
 };
 
 const ReachabilityEnvelope: React.FC = () => {
-  const { dhTable, jointAngles, simulatedObject, isTaskPlaying } = useSimulationStore();
+  const { dhTable, jointAngles, simulatedObject, isTaskPlaying, dropTarget, tablePreset } = useSimulationStore();
   const [cells, setCells] = useState<PickabilityCell[]>([]);
   const cache = useRef(new Map<string, PickabilityCell[]>());
   useEffect(() => {
     if (isTaskPlaying) return;
     const yaw = simulatedObject.rotation.yaw;
-    const key = `${TABLE.width}:${TABLE.depth}:${TABLE.height}:${TABLE.topThickness}:${TABLE.center.x}:${TABLE.center.y}:${BOOK.size.x}:${BOOK.size.y}:${BOOK.size.z}:${dhTable.map((link) => `${link.a},${link.alpha},${link.d},${link.thetaMin},${link.thetaMax}`).join(';')}:${yaw.toFixed(4)}:${jointAngles.map((q) => q.toFixed(3)).join(',')}`;
+    const key = `${tablePreset}:${TABLE.width}:${TABLE.depth}:${TABLE.height}:${TABLE.topThickness}:${TABLE.center.x}:${TABLE.center.y}:${BOOK.size.x}:${BOOK.size.y}:${BOOK.size.z}:${dhTable.map((link) => `${link.a},${link.alpha},${link.d},${link.thetaMin},${link.thetaMax}`).join(';')}:${yaw.toFixed(4)}:${jointAngles.map((q) => q.toFixed(3)).join(',')}`;
     const cached = cache.current.get(key);
     if (cached) { setCells(cached); return; }
     setCells([]);
@@ -288,7 +331,7 @@ const ReachabilityEnvelope: React.FC = () => {
       let frame = 0;
       const process = () => {
         const end = Math.min(index + 2, points.length);
-        for (; index < end; index++) computed.push(evaluatePickabilityCell(dhTable, jointAngles, points[index], yaw));
+        for (; index < end; index++) computed.push(evaluatePickabilityCell(dhTable, jointAngles, points[index], yaw, dropTarget ? { ...dropTarget, yaw: dropTarget.yaw * Math.PI / 180 } : null));
         if (index < points.length) frame = window.requestAnimationFrame(process);
         else {
           cache.current.set(key, computed);
@@ -301,7 +344,7 @@ const ReachabilityEnvelope: React.FC = () => {
     }, 300);
     let cleanupFrame = () => {};
     return () => { window.clearTimeout(timer); cleanupFrame(); };
-  }, [dhTable, isTaskPlaying, jointAngles, simulatedObject.position.z, simulatedObject.rotation.yaw]);
+  }, [dhTable, dropTarget, isTaskPlaying, jointAngles, simulatedObject.position.z, simulatedObject.rotation.yaw, tablePreset]);
 
   const geometry = useMemo(() => {
     const geometry = new THREE.BufferGeometry();
@@ -326,7 +369,7 @@ const ReachabilityEnvelope: React.FC = () => {
   useEffect(() => () => geometry.dispose(), [geometry]);
 
   return (
-    <mesh position={[TABLE.center.x, TABLE.center.y, TABLE.height + 0.002]} geometry={geometry}>
+    <mesh position={[TABLE.center.x, TABLE.center.y, TABLE.height + 0.002]} geometry={geometry} raycast={() => null}>
       <meshBasicMaterial color="#64b77b" transparent opacity={0.16} side={THREE.DoubleSide} depthWrite={false} />
     </mesh>
   );

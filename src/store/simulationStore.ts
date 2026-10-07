@@ -1,15 +1,18 @@
 import { create } from 'zustand';
 import { AppTab, DHParameter, EulerAngles, FKResult, Vector3D } from '../types/robotics';
-import { INITIAL_DH_TABLE, PUMA_GEOMETRY, TCP_OFFSET } from '../robot/robotConfig';
+import { INITIAL_DH_TABLE, PUMA_GEOMETRY, setTablePreset as applyTablePreset, TablePreset, TCP_OFFSET } from '../robot/robotConfig';
 import { computeForwardKinematics } from '../robotics/forwardKinematics';
 import { transformPoint } from '../robotics/inverseKinematics';
-import { degToRad } from '../robotics/transforms';
-import { clampObjectToTable, createPickPlan, DEFAULT_DROP_POSITION, PickPlan } from '../robotics/autonomousPlanner';
+import { heldBookCollision } from '../robotics/heldObjectCollision';
+import { degToRad, rpyToMatrix } from '../robotics/transforms';
+import { clampObjectToTable, chooseGraspCandidate, createPickPlan, DropTarget, findDefaultPickPosition, findNearestPickablePosition, findNearestValidDestination, PickPlan, validatePickApproach } from '../robotics/autonomousPlanner';
 import { SimulatedObject } from '../types/robotics';
 import {
   BOOK,
   GRIPPER,
   HOME_JOINT_ANGLES,
+  PREDEFINED_BOOK_POSITION,
+  TABLE,
   JointWaypoint,
   ORIENTATION_TOLERANCE,
   PLACEMENT_TOLERANCE,
@@ -23,6 +26,8 @@ import {
 interface SimulationState {
   simulatorMode: 'manual' | 'predefined' | 'autonomous';
   setSimulatorMode: (mode: 'manual' | 'predefined' | 'autonomous') => void;
+  tablePreset: TablePreset;
+  setTablePreset: (preset: TablePreset) => void;
   // Navigation
   activeTab: AppTab;
   setActiveTab: (tab: AppTab) => void;
@@ -42,6 +47,7 @@ interface SimulationState {
   positionError: number;
   placementError: number;
   isGripperOpen: boolean;
+  gripperCloseWidth: number;
   isHoldingBook: boolean;
   showRobotDebug: boolean;
   showGraspDebug: boolean;
@@ -59,6 +65,12 @@ interface SimulationState {
   heldRotationOffset: EulerAngles;
   simulatedObject: SimulatedObject;
   autonomousPlan: PickPlan | null;
+  dropTarget: DropTarget | null;
+  setDropTarget: (target: DropTarget | null, snap?: boolean) => void;
+  allowUnreachablePlacement: boolean;
+  setAllowUnreachablePlacement: (enabled: boolean) => void;
+  destinationPickArmed: boolean;
+  setDestinationPickArmed: (armed: boolean) => void;
   setBookPosition: (position: { x: number; y: number; z: number }) => void;
   setBookYawDegrees: (yawDegrees: number) => void;
   setObjectDragging: (dragging: boolean) => void;
@@ -87,17 +99,17 @@ interface SimulationState {
 const defaultAngles = HOME_JOINT_ANGLES;
 const initialFK = computeForwardKinematics(INITIAL_DH_TABLE, defaultAngles);
 const initialTaskWaypoints = buildTask5JointWaypoints(INITIAL_DH_TABLE);
-const initialPickPlan = createPickPlan(INITIAL_DH_TABLE, BOOK.initialPosition, defaultAngles, DEFAULT_DROP_POSITION, 0);
+const initialPickability = validatePickApproach(INITIAL_DH_TABLE, BOOK.initialPosition, defaultAngles, Math.PI / 2);
 const GRASP_TOLERANCE = 0.035;
 const END_EFFECTOR_TOLERANCE = 0.018;
 const AUTONOMOUS_SEGMENT_SECONDS = 1.5;
 
-function graspDebugEntry(stage: string, fk: FKResult, object: SimulatedObject, gripperOpen: boolean) {
+function graspDebugEntry(stage: string, fk: FKResult, object: SimulatedObject, gripperOpen: boolean, closeWidth = BOOK.size.y) {
   return {
     stage,
     tcp: { ...fk.tcpPose.position },
     bookCenter: { ...object.position },
-    fingerGap: (gripperOpen ? GRIPPER.openWidth : GRIPPER.closedWidth) - GRIPPER.fingerThickness,
+    fingerGap: (gripperOpen ? GRIPPER.openWidth : closeWidth + GRIPPER.fingerThickness) - GRIPPER.fingerThickness,
   };
 }
 
@@ -119,7 +131,16 @@ function safelyReleaseObject(object: SimulatedObject): SimulatedObject {
 
 export const useSimulationStore = create<SimulationState>((set, get) => ({
   simulatorMode: 'manual',
-  setSimulatorMode: (mode) => set({ simulatorMode: mode, taskMode: mode === 'autonomous' ? 'autonomous' : 'predefined' }),
+  setSimulatorMode: (mode) => set((state) => ({ simulatorMode: mode, taskMode: mode === 'autonomous' ? 'autonomous' : 'predefined', simulatedObject: mode === 'predefined' && !state.isTaskPlaying ? { ...state.simulatedObject, position: { ...PREDEFINED_BOOK_POSITION }, rotation: { roll: 0, pitch: 0, yaw: 0 }, graspState: 'on-table', state: 'onTable', isAttached: false, isGrasped: false } : state.simulatedObject })),
+  tablePreset: 'compact',
+  setTablePreset: (preset) => {
+    const state = get();
+    if (state.isTaskPlaying) return;
+    applyTablePreset(preset);
+    const defaultPose = findDefaultPickPosition(state.dhTable, state.jointAngles, 0);
+    Object.assign(BOOK.initialPosition, defaultPose);
+    set({ tablePreset: preset, dropTarget: null, autonomousPlan: null, taskPhase: 'IDLE', autonomousPhase: 'IDLE', pickStatus: 'IDLE', simulatedObject: { ...state.simulatedObject, position: { ...defaultPose }, rotation: { roll: 0, pitch: 0, yaw: 0 }, reachability: { reachable: true, reason: 'Reachable' }, state: 'onTable', graspState: 'on-table', isAttached: false, isGrasped: false } });
+  },
   activeTab: 'robot',
   setActiveTab: (tab) => set({ activeTab: tab }),
 
@@ -134,6 +155,7 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
   positionError: distance(initialFK.endEffectorPose.position, initialTaskWaypoints[0].position),
   placementError: 0,
   isGripperOpen: true,
+  gripperCloseWidth: BOOK.size.y,
   isHoldingBook: false,
   showRobotDebug: false,
   showGraspDebug: false,
@@ -153,10 +175,28 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
     id: 'book-1', type: 'book', position: BOOK.initialPosition,
     rotation: { roll: 0, pitch: 0, yaw: 0 }, dimensions: BOOK.size,
     graspState: 'on-table', state: 'onTable', isSelected: false, isBeingDragged: false, isGrasped: false, isAttached: false,
-    targetPosition: DEFAULT_DROP_POSITION,
-    reachability: { reachable: initialPickPlan.reachable, reason: initialPickPlan.reason },
+    reachability: { reachable: initialPickability.reachable, reason: initialPickability.reason },
   },
   autonomousPlan: null,
+  dropTarget: null,
+  allowUnreachablePlacement: false,
+  setAllowUnreachablePlacement: (enabled) => set({ allowUnreachablePlacement: enabled }),
+  destinationPickArmed: false,
+  setDestinationPickArmed: (armed) => set({ destinationPickArmed: armed }),
+
+  setDropTarget: (target, snap = false) => {
+    const state = get();
+    if (state.isTaskPlaying) return;
+    const requested = target ? { x: target.x, y: target.y, yaw: target.yaw } : null;
+    const snapped = requested && snap && !state.allowUnreachablePlacement
+      ? findNearestValidDestination(state.dhTable, state.jointAngles, state.simulatedObject.position, state.simulatedObject.rotation.yaw, requested, degToRad(requested.yaw))
+      : null;
+    const normalized = requested ? { ...requested, ...(snapped ?? {}) } : null;
+    const destination = normalized ? { ...normalized, yaw: degToRad(normalized.yaw) } : null;
+    const plan = destination ? createPickPlan(state.dhTable, state.simulatedObject.position, state.jointAngles, destination, state.simulatedObject.rotation.yaw) : null;
+    const pick = destination ? null : validatePickApproach(state.dhTable, state.simulatedObject.position, state.jointAngles, state.simulatedObject.rotation.yaw + Math.PI / 2);
+    set({ dropTarget: normalized, autonomousPlan: null, taskPhase: 'IDLE', autonomousPhase: 'IDLE', pickStatus: 'IDLE', simulatedObject: { ...state.simulatedObject, reachability: { reachable: plan?.reachable ?? pick!.reachable, reason: plan?.reason ?? pick!.reason } } });
+  },
 
   setBookPosition: (position) => {
     const state = get();
@@ -173,8 +213,9 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
     const state = get();
     if (state.isTaskPlaying) return;
     const rotation = { ...state.simulatedObject.rotation, yaw: degToRad(yawDegrees) };
-    const plan = createPickPlan(state.dhTable, state.simulatedObject.position, state.jointAngles, state.simulatedObject.targetPosition, rotation.yaw);
-    set({ autonomousPlan: null, taskPhase: 'IDLE', autonomousPhase: 'IDLE', pickStatus: 'IDLE', simulatedObject: { ...state.simulatedObject, rotation, reachability: { reachable: plan.reachable, reason: plan.reason } } });
+    const plan = state.dropTarget ? createPickPlan(state.dhTable, state.simulatedObject.position, state.jointAngles, { ...state.dropTarget, yaw: degToRad(state.dropTarget.yaw) }, rotation.yaw) : null;
+    const pick = state.dropTarget ? null : validatePickApproach(state.dhTable, state.simulatedObject.position, state.jointAngles, rotation.yaw + Math.PI / 2);
+    set({ autonomousPlan: null, taskPhase: 'IDLE', autonomousPhase: 'IDLE', pickStatus: 'IDLE', simulatedObject: { ...state.simulatedObject, rotation, reachability: { reachable: plan?.reachable ?? pick!.reachable, reason: plan?.reason ?? pick!.reason } } });
   },
 
   setObjectDragging: (isBeingDragged) => set((state) => ({
@@ -187,18 +228,23 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
 
   checkObjectReachability: () => {
     const state = get();
-    const plan = createPickPlan(state.dhTable, state.simulatedObject.position, state.jointAngles, state.simulatedObject.targetPosition, state.simulatedObject.rotation.yaw);
-    set({
-      autonomousPlan: plan,
-      simulatedObject: { ...state.simulatedObject, reachability: { reachable: plan.reachable, reason: plan.reason } },
-    });
+    const position = !state.allowUnreachablePlacement ? findNearestPickablePosition(state.dhTable, state.jointAngles, state.simulatedObject.position, state.simulatedObject.rotation.yaw, state.dropTarget ? { ...state.dropTarget, yaw: degToRad(state.dropTarget.yaw) } : null) : state.simulatedObject.position;
+    const object = { ...state.simulatedObject, position };
+    if (!state.dropTarget) {
+      const pick = chooseGraspCandidate(state.dhTable, position, state.jointAngles, state.simulatedObject.rotation.yaw);
+      set({ autonomousPlan: null, simulatedObject: { ...object, reachability: { reachable: !!pick, reason: pick ? 'Reachable' : 'Book orientation not reachable here at any wrist angle' } } });
+      return;
+    }
+    const plan = createPickPlan(state.dhTable, position, state.jointAngles, { ...state.dropTarget, yaw: degToRad(state.dropTarget.yaw) }, state.simulatedObject.rotation.yaw);
+    set({ autonomousPlan: plan, simulatedObject: { ...object, reachability: { reachable: plan.reachable, reason: plan.reason } } });
   },
 
   planAutonomousPick: () => {
     const state = get();
-    const plan = createPickPlan(state.dhTable, state.simulatedObject.position, state.jointAngles, state.simulatedObject.targetPosition, state.simulatedObject.rotation.yaw);
+    if (!state.dropTarget) { set({ autonomousPlan: null, pickStatus: 'Set a destination (click the table or type X/Y)', taskPhase: 'IDLE', autonomousPhase: 'IDLE' }); return; }
+    const plan = createPickPlan(state.dhTable, state.simulatedObject.position, state.jointAngles, { ...state.dropTarget, yaw: degToRad(state.dropTarget.yaw) }, state.simulatedObject.rotation.yaw);
     set({
-      taskMode: 'autonomous', simulatorMode: 'autonomous', autonomousPlan: plan, isTaskPlaying: false,
+      taskMode: 'autonomous', simulatorMode: 'autonomous', autonomousPlan: plan, gripperCloseWidth: plan.gripWidth, isTaskPlaying: false,
       taskPhase: plan.reachable ? 'PLANNED' : 'UNREACHABLE', trajectoryTime: 0,
       autonomousPhase: plan.reachable ? 'PLANNED' : 'UNREACHABLE', pickStatus: plan.reachable ? 'PLANNING: READY' : `FAILED: ${plan.reason}`,
       graspDebugLog: [...state.graspDebugLog, graspDebugEntry('PLANNING', state.fkResult, state.simulatedObject, state.isGripperOpen)],
@@ -239,6 +285,7 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
       isTaskPlaying: false,
       isHoldingBook: false,
       isGripperOpen: true,
+      gripperCloseWidth: BOOK.size.y,
       autonomousPlan: null,
       pickStatus: state.isTaskPlaying ? 'PAUSED: manual joint edit stopped the sequence' : state.pickStatus,
       simulatedObject: { ...(state.simulatedObject.isAttached ? safelyReleaseObject(state.simulatedObject) : state.simulatedObject), reachability: { reachable: false, reason: 'Robot pose changed; plan again' } },
@@ -266,6 +313,7 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
       isTaskPlaying: false,
       isHoldingBook: false,
       isGripperOpen: true,
+      gripperCloseWidth: BOOK.size.y,
       autonomousPlan: null,
       pickStatus: state.isTaskPlaying ? 'PAUSED: manual joint edit stopped the sequence' : state.pickStatus,
       simulatedObject: { ...(state.simulatedObject.isAttached ? safelyReleaseObject(state.simulatedObject) : state.simulatedObject), reachability: { reachable: false, reason: 'Robot pose changed; plan again' } },
@@ -288,7 +336,7 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
     });
   },
 
-  playTask: () => set({ taskMode: 'predefined', simulatorMode: 'predefined', isTaskPlaying: true, pickStatus: 'IDLE' }),
+  playTask: () => set((state) => ({ taskMode: 'predefined', simulatorMode: 'predefined', isTaskPlaying: true, pickStatus: 'IDLE', simulatedObject: { ...state.simulatedObject, position: { ...PREDEFINED_BOOK_POSITION }, rotation: { roll: 0, pitch: 0, yaw: 0 }, graspState: 'on-table', state: 'onTable', isAttached: false, isGrasped: false } })),
 
   pauseTask: () => {
     const state = get();
@@ -338,7 +386,7 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
         rotation: { roll: 0, pitch: 0, yaw: 0 },
         isGrasped: false,
         isAttached: false,
-        reachability: { reachable: initialPickPlan.reachable, reason: initialPickPlan.reason },
+        reachability: { reachable: initialPickability.reachable, reason: initialPickability.reason },
       },
     });
   },
@@ -348,7 +396,7 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
     if (!state.isTaskPlaying || state.taskPhase === 'COMPLETE' || state.taskPhase === 'ERROR') return;
 
     if (state.taskMode === 'autonomous' && state.graspDebugLog[state.graspDebugLog.length - 1]?.stage !== state.pickStatus) {
-      const fingerGap = (state.isGripperOpen ? GRIPPER.openWidth : GRIPPER.closedWidth) - GRIPPER.fingerThickness;
+      const fingerGap = (state.isGripperOpen ? GRIPPER.openWidth : state.gripperCloseWidth + GRIPPER.fingerThickness) - GRIPPER.fingerThickness;
       set({ graspDebugLog: [...state.graspDebugLog, {
         stage: state.pickStatus,
         tcp: { ...state.fkResult.tcpPose.position },
@@ -404,7 +452,9 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
       const angles = state.autonomousStartAngles.map((angle, i) => angle + (waypoint.jointAngles[i] - angle) * smooth);
       const fk = computeForwardKinematics(state.dhTable, angles);
       const eeError = distance(fk.endEffectorPose.position, waypoint.position);
-      const reached = eeError <= END_EFFECTOR_TOLERANCE;
+      const targetFk = computeForwardKinematics(state.dhTable, waypoint.jointAngles);
+      const yawTrackingError = Math.abs(Math.atan2(Math.sin(fk.endEffectorPose.orientation.yaw - targetFk.endEffectorPose.orientation.yaw), Math.cos(fk.endEffectorPose.orientation.yaw - targetFk.endEffectorPose.orientation.yaw)));
+      const reached = index === 1 || index === 4 ? eeError <= 0.0015 && yawTrackingError <= degToRad(0.1) : eeError <= END_EFFECTOR_TOLERANCE;
       const baseUpdate = {
         jointAngles: angles,
         fkResult: fk,
@@ -424,10 +474,17 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
       }
 
       if (reached && index === 4) {
-        const releasePosition = transformPoint(fk.endEffectorPose.rotationMatrix, state.heldObjectLocalOffset);
-        const releaseError = distance(releasePosition, state.simulatedObject.targetPosition);
-        if (releaseError > PLACEMENT_TOLERANCE) {
-          set({ ...baseUpdate, isTaskPlaying: false, taskPhase: 'ERROR', autonomousPhase: 'ERROR', pickStatus: `FAILED: placement error ${releaseError.toFixed(3)} m`, placementError: releaseError });
+        const releasePositionRaw = transformPoint(fk.endEffectorPose.rotationMatrix, state.heldObjectLocalOffset);
+        const releaseRotation = addEuler(fk.endEffectorPose.orientation, state.heldRotationOffset);
+        const releaseMatrix = rpyToMatrix(releaseRotation.roll, releaseRotation.pitch, releaseRotation.yaw);
+        const releaseHalfBottom = Math.abs(releaseMatrix[8]) * BOOK.size.x / 2 + Math.abs(releaseMatrix[9]) * BOOK.size.y / 2 + Math.abs(releaseMatrix[10]) * BOOK.size.z / 2;
+        const releasePosition = { ...releasePositionRaw, z: Math.max(releasePositionRaw.z, TABLE.height + releaseHalfBottom + 1e-6) };
+        const target = state.dropTarget;
+        const declaredPose = target ? { x: target.x, y: target.y, z: TABLE.height + BOOK.size.z / 2 } : null;
+        const releaseError = declaredPose ? distance(releasePosition, declaredPose) : Infinity;
+        const yawError = target ? Math.abs(Math.atan2(Math.sin(state.simulatedObject.rotation.yaw - degToRad(target.yaw)), Math.cos(state.simulatedObject.rotation.yaw - degToRad(target.yaw)))) : Infinity;
+        if (!declaredPose || releaseError > 0.005 || yawError > degToRad(2)) {
+          set({ ...baseUpdate, isTaskPlaying: false, taskPhase: 'ERROR', autonomousPhase: 'ERROR', pickStatus: `FAILED: book pose outside release tolerance (${releaseError.toFixed(3)} m; dx=${declaredPose ? (releasePosition.x-declaredPose.x).toFixed(3) : 'n/a'}, dy=${declaredPose ? (releasePosition.y-declaredPose.y).toFixed(3) : 'n/a'}, dz=${declaredPose ? (releasePosition.z-declaredPose.z).toFixed(3) : 'n/a'} m; ${(yawError * 180 / Math.PI).toFixed(1)} deg)`, placementError: releaseError });
           return;
         }
         set({
@@ -441,8 +498,8 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
           isHoldingBook: false,
           placementError: releaseError,
           simulatedObject: {
-            ...state.simulatedObject, position: releasePosition,
-            rotation: addEuler(fk.endEffectorPose.orientation, state.heldRotationOffset),
+            ...state.simulatedObject, position: declaredPose!,
+            rotation: { ...state.simulatedObject.rotation, yaw: degToRad(target!.yaw), roll: 0, pitch: 0 },
             graspState: 'on-table', state: 'placed', isGrasped: false, isAttached: false,
           },
         });
@@ -473,9 +530,22 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
         return;
       }
 
-      const heldPosition = state.isHoldingBook
+      let heldPosition = state.isHoldingBook
         ? transformPoint(fk.endEffectorPose.rotationMatrix, state.heldObjectLocalOffset)
         : state.simulatedObject.position;
+      const heldRotation = state.isHoldingBook ? addEuler(fk.endEffectorPose.orientation, state.heldRotationOffset) : state.simulatedObject.rotation;
+      if (state.isHoldingBook && state.autonomousPhase === 'LOWERING TO TARGET') {
+        const rotation = rpyToMatrix(heldRotation.roll, heldRotation.pitch, heldRotation.yaw);
+        const halfBottom = Math.abs(rotation[8]) * BOOK.size.x / 2 + Math.abs(rotation[9]) * BOOK.size.y / 2 + Math.abs(rotation[10]) * BOOK.size.z / 2;
+        if (heldPosition.z - halfBottom < TABLE.height + 1e-6) heldPosition = { ...heldPosition, z: TABLE.height + halfBottom + 1e-6 };
+      }
+      if (state.isHoldingBook && ['LIFTING', 'MOVING TO TARGET', 'LOWERING TO TARGET'].includes(state.autonomousPhase)) {
+        const collision = heldBookCollision(heldPosition, heldRotation);
+        if (collision) {
+          set({ ...baseUpdate, isTaskPlaying: false, isHoldingBook: false, isGripperOpen: true, taskPhase: 'ERROR', autonomousPhase: 'ERROR', pickStatus: `FAILED: ${collision.kind} (${(collision.penetrationM*1000).toFixed(1)} mm)`, simulatedObject: { ...state.simulatedObject, position: heldPosition, rotation: heldRotation, graspState: 'on-table', state: 'onTable', isAttached: false, isGrasped: false } });
+          return;
+        }
+      }
       set({
         ...baseUpdate,
         isTaskPlaying: true,
@@ -483,7 +553,7 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
         simulatedObject: state.isHoldingBook ? {
           ...state.simulatedObject,
           position: heldPosition,
-          rotation: addEuler(fk.endEffectorPose.orientation, state.heldRotationOffset),
+          rotation: heldRotation,
         } : state.simulatedObject,
       });
       return;
@@ -509,7 +579,7 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
     }
 
     if (target.id === 'P3' && targetError <= POSITION_TOLERANCE) {
-      const bookError = distance(BOOK.initialPosition, { ...target.position, z: BOOK.initialPosition.z });
+      const bookError = distance(PREDEFINED_BOOK_POSITION, { ...target.position, z: PREDEFINED_BOOK_POSITION.z });
       const orientationOk = state.taskWaypoints[2].ik.orientationError <= ORIENTATION_TOLERANCE;
       if (bookError <= 0.04 && orientationOk) {
         taskPhase = 'HOLDING OBJECT';

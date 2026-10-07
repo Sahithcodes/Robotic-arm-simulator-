@@ -37,8 +37,27 @@ export const ROBOT_BASE_POSITION = { x: 0, y: 0, z: ROBOT_MOUNT_HEIGHT };
 export const JOINT_AXES: readonly [number, number, number][] = Array.from({ length: 6 }, () => [0, 0, 1] as [number, number, number]);
 export const ROBOT_BASE_KEEP_OUT = { center: { x: 0, y: 0 }, radius: 0.20 };
 export const ROBOT_PEDESTAL = { columnRadius: 0.095, columnTop: ROBOT_MOUNT_HEIGHT + PUMA_GEOMETRY.d1, collisionTop: ROBOT_MOUNT_HEIGHT + PUMA_GEOMETRY.d1 - 0.08 };
-export const TABLE_GEOMETRY = { width: 0.60, depth: 0.40, height: 0.78, topThickness: 0.045, center: { x: 0.60, y: 0, z: 0.78 } };
+export type TablePreset = 'compact' | 'large';
+export const TABLE_PRESETS = {
+  compact: { width: 0.34, depth: 0.20, height: 0.78, topThickness: 0.045, center: { x: 0.71, y: -0.04, z: 0.78 } },
+  large: { width: 0.60, depth: 0.40, height: 0.78, topThickness: 0.045, center: { x: 0.60, y: 0, z: 0.78 } },
+} as const;
+export const TABLE_GEOMETRY: { width: number; depth: number; height: number; topThickness: number; center: { x: number; y: number; z: number } } = { ...TABLE_PRESETS.compact, center: { ...TABLE_PRESETS.compact.center } };
 export const TABLE_BOUNDS = { minX: TABLE_GEOMETRY.center.x - TABLE_GEOMETRY.width / 2, maxX: TABLE_GEOMETRY.center.x + TABLE_GEOMETRY.width / 2, minY: TABLE_GEOMETRY.center.y - TABLE_GEOMETRY.depth / 2, maxY: TABLE_GEOMETRY.center.y + TABLE_GEOMETRY.depth / 2 };
+export function setTablePreset(preset: TablePreset) {
+  const geometry = TABLE_PRESETS[preset];
+  TABLE_GEOMETRY.width = geometry.width;
+  TABLE_GEOMETRY.depth = geometry.depth;
+  TABLE_GEOMETRY.height = geometry.height;
+  TABLE_GEOMETRY.topThickness = geometry.topThickness;
+  Object.assign(TABLE_GEOMETRY.center, geometry.center);
+  Object.assign(TABLE_BOUNDS, {
+    minX: TABLE_GEOMETRY.center.x - TABLE_GEOMETRY.width / 2,
+    maxX: TABLE_GEOMETRY.center.x + TABLE_GEOMETRY.width / 2,
+    minY: TABLE_GEOMETRY.center.y - TABLE_GEOMETRY.depth / 2,
+    maxY: TABLE_GEOMETRY.center.y + TABLE_GEOMETRY.depth / 2,
+  });
+}
 // T06 flange to finger tips. Each rendered finger is exactly this long.
 export const TOOL_LENGTH = 0.075;
 export const TCP_OFFSET = { x: 0, y: 0, z: TOOL_LENGTH };

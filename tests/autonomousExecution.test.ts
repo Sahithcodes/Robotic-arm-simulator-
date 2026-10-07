@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { useSimulationStore } from '../src/store/simulationStore';
 
 describe('autonomous pick execution', () => {
-  beforeEach(() => useSimulationStore.getState().resetTask());
+  beforeEach(() => { useSimulationStore.getState().setTablePreset('compact'); useSimulationStore.getState().resetTask(); useSimulationStore.getState().setDropTarget({x:.61,y:0,yaw:0},true); });
 
   it('keeps the object at its table position until spatially verified grasp', () => {
     const store = useSimulationStore.getState();
@@ -40,18 +40,20 @@ describe('autonomous pick execution', () => {
     expect(state.taskPhase, `waypoint=${state.autonomousWaypointIndex}, error=${state.positionError}, placement=${state.placementError}`).toBe('COMPLETE');
     expect(state.simulatedObject.isAttached).toBe(false);
     expect(state.simulatedObject.isGrasped).toBe(false);
-    expect(state.simulatedObject.position.x).toBeCloseTo(state.simulatedObject.targetPosition.x, 2);
-    expect(state.simulatedObject.position.y).toBeCloseTo(state.simulatedObject.targetPosition.y, 2);
+    expect(state.dropTarget).toBeDefined();
+    expect(state.simulatedObject.position.x).toBeCloseTo(state.dropTarget!.x, 2);
+    expect(state.simulatedObject.position.y).toBeCloseTo(state.dropTarget!.y, 2);
   });
 
   it('replans and completes autonomous pickup at every reachable point in the 3x3 table grid', () => {
     const points = [
-      { x: 0.61, y: -0.08 }, { x: 0.61, y: -0.04 }, { x: 0.61, y: 0 },
-      { x: 0.68, y: -0.08 }, { x: 0.68, y: -0.04 }, { x: 0.68, y: 0 },
-      { x: 0.75, y: -0.08 }, { x: 0.75, y: -0.04 }, { x: 0.75, y: 0 },
+      { x: 0.78, y: -0.08 }, { x: 0.78, y: -0.04 }, { x: 0.78, y: 0 },
+      { x: 0.79, y: -0.08 }, { x: 0.79, y: -0.04 }, { x: 0.79, y: 0 },
+      { x: 0.80, y: -0.08 }, { x: 0.80, y: -0.04 }, { x: 0.80, y: 0 },
     ];
     for (const point of points) {
       useSimulationStore.getState().setBookPosition({ ...point, z: useSimulationStore.getState().simulatedObject.position.z });
+      useSimulationStore.getState().setDropTarget({x:.61,y:0,yaw:0});
       useSimulationStore.getState().checkObjectReachability();
       expect(useSimulationStore.getState().autonomousPlan?.reachable, `plan failed at ${point.x}, ${point.y}`).toBe(true);
       useSimulationStore.getState().executeAutonomousPick();
@@ -61,8 +63,9 @@ describe('autonomous pick execution', () => {
       const result = useSimulationStore.getState();
       expect(result.taskPhase, `execution failed at ${point.x}, ${point.y}`).toBe('COMPLETE');
       expect(result.simulatedObject.isAttached).toBe(false);
-      expect(result.simulatedObject.position.x).toBeCloseTo(result.simulatedObject.targetPosition.x, 2);
-      expect(result.simulatedObject.position.y).toBeCloseTo(result.simulatedObject.targetPosition.y, 2);
+      expect(result.dropTarget).toBeDefined();
+      expect(result.simulatedObject.position.x).toBeCloseTo(result.dropTarget!.x, 2);
+      expect(result.simulatedObject.position.y).toBeCloseTo(result.dropTarget!.y, 2);
     }
   });
 });

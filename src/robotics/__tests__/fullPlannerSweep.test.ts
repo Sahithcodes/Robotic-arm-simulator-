@@ -6,6 +6,10 @@ import { INITIAL_DH_TABLE } from '../../robot/robotConfig';
 import { BOOK, HOME_JOINT_ANGLES, TABLE } from '../task5';
 import { createPickPlan, PlanFailure } from '../autonomousPlanner';
 import { computeForwardKinematics } from '../forwardKinematics';
+import { useSimulationStore } from '../../store/simulationStore';
+import { beforeEach } from 'vitest';
+
+beforeEach(() => useSimulationStore.getState().setTablePreset('large'));
 
 const yawsDeg = [0, 30, 60, 90, 120, 150, 180];
 const round = (n: number, digits = 3) => Number(n.toFixed(digits));
@@ -61,7 +65,7 @@ describe('instrumented planner cases and measured full-plan sweep', () => {
   it('prints structured failure diagnostics for the two requested positions', () => {
     const rows: { position: string; yawDeg: number; tiltDeg: number; tried: string; stageKind: string; link: string; primitive: string; penetrationMm: string; seeds: string; failureRecords: object[] }[] = [];
     for (const position of casePoses) for (const yawDeg of [0, 45, 90, 135]) {
-      const plan = createPickPlan(INITIAL_DH_TABLE, { ...position, z: BOOK.initialPosition.z }, HOME_JOINT_ANGLES, undefined, yawDeg * Math.PI / 180, true);
+      const plan = createPickPlan(INITIAL_DH_TABLE, { ...position, z: BOOK.initialPosition.z }, HOME_JOINT_ANGLES, { x: 0.8, y: 0, yaw: 0 }, yawDeg * Math.PI / 180, true);
       for (const tilt of [0, 10, 20, 30]) {
         const attempts = plan.diagnostics.filter((d) => Math.abs((d.tiltDeg ?? -1) - tilt) < 1e-5);
         const pathFailure = plan.failure && Math.abs((plan.failure.tiltDeg ?? -1) - tilt) < 1e-5 ? [plan.failure] : [];
@@ -103,8 +107,9 @@ describe('instrumented planner cases and measured full-plan sweep', () => {
       const strict: boolean[] = [], enabled: boolean[] = [], tiltDeg: (number | null)[] = [], failureKind: (string | null)[] = [];
       const start = performance.now();
       for (const position of cells) {
-        const noTilt = createPickPlan(INITIAL_DH_TABLE, position, HOME_JOINT_ANGLES, undefined, yaw, false);
-        const tilted = createPickPlan(INITIAL_DH_TABLE, position, HOME_JOINT_ANGLES, undefined, yaw, true);
+        const destination = { x: 0.8, y: 0, yaw: 0 };
+        const noTilt = createPickPlan(INITIAL_DH_TABLE, position, HOME_JOINT_ANGLES, destination, yaw, false);
+        const tilted = createPickPlan(INITIAL_DH_TABLE, position, HOME_JOINT_ANGLES, destination, yaw, true);
         strict.push(noTilt.reachable);
         enabled.push(tilted.reachable);
         tiltDeg.push(tilted.reachable ? round(usedTilt(tilted), 1) : null);

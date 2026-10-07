@@ -9,6 +9,7 @@ import { FKResult, Matrix4x4, Vector3D } from '../../types/robotics';
 interface RobotKinematicChainProps {
   fkResult: FKResult;
   isGripperOpen: boolean;
+  closeWidth?: number;
   showRobotDebug: boolean;
   showJointLabels?: boolean;
 }
@@ -55,6 +56,7 @@ function jointAxis(cumulativeTransforms: Matrix4x4[], jointIndex: number): THREE
 export const RobotKinematicChain: React.FC<RobotKinematicChainProps> = ({
   fkResult,
   isGripperOpen,
+  closeWidth = BOOK.size.y,
   showRobotDebug,
   showJointLabels = false,
 }) => {
@@ -114,6 +116,7 @@ export const RobotKinematicChain: React.FC<RobotKinematicChainProps> = ({
         <EndEffectorMesh
           transform={cumulativeTransforms[5]}
           isOpen={isGripperOpen}
+          closeWidth={closeWidth}
           showRobotDebug={showRobotDebug}
         />
       )}
@@ -213,10 +216,11 @@ const JointHousing: React.FC<{
 const EndEffectorMesh: React.FC<{
   transform: Matrix4x4;
   isOpen: boolean;
+  closeWidth: number;
   showRobotDebug: boolean;
-}> = ({ transform, isOpen, showRobotDebug }) => {
+}> = ({ transform, isOpen, closeWidth, showRobotDebug }) => {
   const matrix = toThreeMatrix4(transform);
-  const opening = isOpen ? GRIPPER.openWidth : GRIPPER.closedWidth;
+  const opening = isOpen ? GRIPPER.openWidth : closeWidth + GRIPPER.fingerThickness;
   const fingerX = opening / 2;
 
   return (
