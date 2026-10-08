@@ -81,7 +81,9 @@ export const ORIENTATION_TOLERANCE = 0.35;
 
 export const TABLE = TABLE_GEOMETRY;
 
-export const PREDEFINED_BOOK_POSITION = { x: 0.68, y: -0.04, z: TABLE_PRESETS.compact.height + 0.025 / 2 };
+// Task 5 keeps its own historically reachable start pose; autonomous/reset use
+// BOOK.initialPosition at the actual resting height.
+export const PREDEFINED_BOOK_POSITION = { x: 0.68, y: -0.04, z: TABLE_PRESETS.compact.height + TABLE_PRESETS.compact.topThickness / 2 + 0.025 / 2 };
 
 export const BOOK = {
   size: { x: 0.1, y: 0.08, z: 0.025 },

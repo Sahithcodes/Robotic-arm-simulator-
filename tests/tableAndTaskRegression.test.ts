@@ -69,6 +69,7 @@ describe('table presets and task regressions', () => {
       expect(useSimulationStore.getState().dropTarget).toBeNull();
       store.playTask();
       const state=runToStop();
+      console.log(`PREDEFINED RESULT preset=${preset} phase=${state.taskPhase} object=${JSON.stringify(state.simulatedObject.position)} destination=none`);
       expect(state.taskPhase,`preset ${preset}: ${state.taskPhase}`).toBe('COMPLETE');
       expect(state.simulatedObject.state).toBe('placed');
       expect(state.simulatedObject.isAttached).toBe(false);
