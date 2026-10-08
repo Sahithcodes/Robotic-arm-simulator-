@@ -14,7 +14,7 @@ const tabs: { id: AppTab; label: string; disabled?: boolean }[] = [
 ];
 
 export const TabNavigation: React.FC = () => {
-  const { activeTab, setActiveTab } = useSimulationStore();
+  const activeTab=useSimulationStore((s)=>s.activeTab),setActiveTab=useSimulationStore((s)=>s.setActiveTab);
 
   return (
     <div className="app-tabs">

@@ -1,11 +1,11 @@
 'use client';
 
 import React from 'react';
-import { useSimulationStore } from '../../store/simulationStore';
 import { radToDeg } from '../../robotics/transforms';
+import { useThrottledSimulationSelector } from '../../store/useThrottledSimulationSelector';
 
 export const FKDisplay: React.FC = () => {
-  const { fkResult } = useSimulationStore();
+  const fkResult = useThrottledSimulationSelector((s) => s.fkResult);
   const { position, orientation } = fkResult.endEffectorPose;
 
   const rollDeg = radToDeg(orientation.roll);

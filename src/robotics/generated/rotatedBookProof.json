@@ -1,0 +1,912 @@
+[
+  {
+    "position": {
+      "x": 0.76,
+      "y": -0.06
+    },
+    "yawDeg": 0,
+    "success": true,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -93.24,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00073,
+    "lowestZM": 0.7925,
+    "reason": "DONE"
+  },
+  {
+    "position": {
+      "x": 0.76,
+      "y": -0.06
+    },
+    "yawDeg": 15,
+    "success": true,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -108.22,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00073,
+    "lowestZM": 0.7925,
+    "reason": "DONE"
+  },
+  {
+    "position": {
+      "x": 0.76,
+      "y": -0.06
+    },
+    "yawDeg": 30,
+    "success": true,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -124.51,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00043,
+    "lowestZM": 0.7925,
+    "reason": "DONE"
+  },
+  {
+    "position": {
+      "x": 0.76,
+      "y": -0.06
+    },
+    "yawDeg": 45,
+    "success": true,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -139.51,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00043,
+    "lowestZM": 0.7925,
+    "reason": "DONE"
+  },
+  {
+    "position": {
+      "x": 0.76,
+      "y": -0.06
+    },
+    "yawDeg": 60,
+    "success": true,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -154.51,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00043,
+    "lowestZM": 0.7925,
+    "reason": "DONE"
+  },
+  {
+    "position": {
+      "x": 0.76,
+      "y": -0.06
+    },
+    "yawDeg": 75,
+    "success": true,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -169.51,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00043,
+    "lowestZM": 0.7925,
+    "reason": "DONE"
+  },
+  {
+    "position": {
+      "x": 0.76,
+      "y": -0.06
+    },
+    "yawDeg": 90,
+    "success": true,
+    "candidate": "narrow axis",
+    "j6AtGrasp": 175.49,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00043,
+    "lowestZM": 0.7925,
+    "reason": "DONE"
+  },
+  {
+    "position": {
+      "x": 0.76,
+      "y": -0.06
+    },
+    "yawDeg": 105,
+    "success": false,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -18.81,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00145,
+    "lowestZM": 0.7933,
+    "reason": "FAILED: book pose outside release tolerance (0.001 m; dx=0.001, dy=0.001, dz=0.001 m; 180.0 deg)"
+  },
+  {
+    "position": {
+      "x": 0.76,
+      "y": -0.06
+    },
+    "yawDeg": 120,
+    "success": false,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -33.28,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00071,
+    "lowestZM": 0.79363,
+    "reason": "FAILED: book pose outside release tolerance (0.001 m; dx=0.001, dy=-0.000, dz=0.000 m; 179.9 deg)"
+  },
+  {
+    "position": {
+      "x": 0.76,
+      "y": -0.06
+    },
+    "yawDeg": 135,
+    "success": false,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -48.22,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00073,
+    "lowestZM": 0.79362,
+    "reason": "FAILED: book pose outside release tolerance (0.001 m; dx=0.000, dy=-0.000, dz=0.000 m; 179.9 deg)"
+  },
+  {
+    "position": {
+      "x": 0.76,
+      "y": -0.06
+    },
+    "yawDeg": 150,
+    "success": false,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -63.19,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00074,
+    "lowestZM": 0.79362,
+    "reason": "FAILED: book pose outside release tolerance (0.001 m; dx=0.000, dy=-0.001, dz=0.000 m; 179.9 deg)"
+  },
+  {
+    "position": {
+      "x": 0.76,
+      "y": -0.06
+    },
+    "yawDeg": 165,
+    "success": false,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -78.19,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00075,
+    "lowestZM": 0.79362,
+    "reason": "FAILED: book pose outside release tolerance (0.001 m; dx=0.000, dy=-0.001, dz=0.000 m; 179.9 deg)"
+  },
+  {
+    "position": {
+      "x": 0.76,
+      "y": -0.06
+    },
+    "yawDeg": 180,
+    "success": false,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -93.24,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00073,
+    "lowestZM": 0.79362,
+    "reason": "FAILED: book pose outside release tolerance (0.001 m; dx=0.000, dy=-0.001, dz=0.000 m; 179.9 deg)"
+  },
+  {
+    "position": {
+      "x": 0.77,
+      "y": -0.05
+    },
+    "yawDeg": 0,
+    "success": true,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -92.2,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00082,
+    "lowestZM": 0.7925,
+    "reason": "DONE"
+  },
+  {
+    "position": {
+      "x": 0.77,
+      "y": -0.05
+    },
+    "yawDeg": 15,
+    "success": true,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -107.46,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00075,
+    "lowestZM": 0.7925,
+    "reason": "DONE"
+  },
+  {
+    "position": {
+      "x": 0.77,
+      "y": -0.05
+    },
+    "yawDeg": 30,
+    "success": true,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -122.49,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00076,
+    "lowestZM": 0.7925,
+    "reason": "DONE"
+  },
+  {
+    "position": {
+      "x": 0.77,
+      "y": -0.05
+    },
+    "yawDeg": 45,
+    "success": true,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -137.36,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00081,
+    "lowestZM": 0.7925,
+    "reason": "DONE"
+  },
+  {
+    "position": {
+      "x": 0.77,
+      "y": -0.05
+    },
+    "yawDeg": 60,
+    "success": true,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -152.21,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00087,
+    "lowestZM": 0.7925,
+    "reason": "DONE"
+  },
+  {
+    "position": {
+      "x": 0.77,
+      "y": -0.05
+    },
+    "yawDeg": 75,
+    "success": true,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -167.57,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00078,
+    "lowestZM": 0.7925,
+    "reason": "DONE"
+  },
+  {
+    "position": {
+      "x": 0.77,
+      "y": -0.05
+    },
+    "yawDeg": 90,
+    "success": true,
+    "candidate": "narrow axis",
+    "j6AtGrasp": 174.82,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00084,
+    "lowestZM": 0.7925,
+    "reason": "DONE"
+  },
+  {
+    "position": {
+      "x": 0.77,
+      "y": -0.05
+    },
+    "yawDeg": 105,
+    "success": false,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -18,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00052,
+    "lowestZM": 0.79362,
+    "reason": "FAILED: book pose outside release tolerance (0.000 m; dx=0.000, dy=-0.000, dz=0.000 m; 180.0 deg)"
+  },
+  {
+    "position": {
+      "x": 0.77,
+      "y": -0.05
+    },
+    "yawDeg": 120,
+    "success": false,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -32.29,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00071,
+    "lowestZM": 0.79364,
+    "reason": "FAILED: book pose outside release tolerance (0.001 m; dx=0.001, dy=-0.000, dz=0.000 m; 179.9 deg)"
+  },
+  {
+    "position": {
+      "x": 0.77,
+      "y": -0.05
+    },
+    "yawDeg": 135,
+    "success": false,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -47.7,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00061,
+    "lowestZM": 0.79364,
+    "reason": "FAILED: book pose outside release tolerance (0.001 m; dx=0.000, dy=-0.000, dz=0.000 m; 179.9 deg)"
+  },
+  {
+    "position": {
+      "x": 0.77,
+      "y": -0.05
+    },
+    "yawDeg": 150,
+    "success": false,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -62.31,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00074,
+    "lowestZM": 0.79364,
+    "reason": "FAILED: book pose outside release tolerance (0.001 m; dx=0.000, dy=-0.001, dz=0.000 m; 179.9 deg)"
+  },
+  {
+    "position": {
+      "x": 0.77,
+      "y": -0.05
+    },
+    "yawDeg": 165,
+    "success": false,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -77.77,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00063,
+    "lowestZM": 0.79363,
+    "reason": "FAILED: book pose outside release tolerance (0.001 m; dx=0.000, dy=-0.000, dz=0.000 m; 179.9 deg)"
+  },
+  {
+    "position": {
+      "x": 0.77,
+      "y": -0.05
+    },
+    "yawDeg": 180,
+    "success": false,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -92.2,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00082,
+    "lowestZM": 0.79363,
+    "reason": "FAILED: book pose outside release tolerance (0.001 m; dx=0.000, dy=-0.001, dz=0.000 m; 179.9 deg)"
+  },
+  {
+    "position": {
+      "x": 0.78,
+      "y": -0.04
+    },
+    "yawDeg": 0,
+    "success": true,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -90.96,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00075,
+    "lowestZM": 0.7925,
+    "reason": "DONE"
+  },
+  {
+    "position": {
+      "x": 0.78,
+      "y": -0.04
+    },
+    "yawDeg": 15,
+    "success": true,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -107.92,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00063,
+    "lowestZM": 0.7925,
+    "reason": "DONE"
+  },
+  {
+    "position": {
+      "x": 0.78,
+      "y": -0.04
+    },
+    "yawDeg": 30,
+    "success": true,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -122.91,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00063,
+    "lowestZM": 0.7925,
+    "reason": "DONE"
+  },
+  {
+    "position": {
+      "x": 0.78,
+      "y": -0.04
+    },
+    "yawDeg": 45,
+    "success": true,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -137.91,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00063,
+    "lowestZM": 0.7925,
+    "reason": "DONE"
+  },
+  {
+    "position": {
+      "x": 0.78,
+      "y": -0.04
+    },
+    "yawDeg": 60,
+    "success": true,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -152.91,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00063,
+    "lowestZM": 0.7925,
+    "reason": "DONE"
+  },
+  {
+    "position": {
+      "x": 0.78,
+      "y": -0.04
+    },
+    "yawDeg": 75,
+    "success": true,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -167.92,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00063,
+    "lowestZM": 0.7925,
+    "reason": "DONE"
+  },
+  {
+    "position": {
+      "x": 0.78,
+      "y": -0.04
+    },
+    "yawDeg": 90,
+    "success": true,
+    "candidate": "narrow axis, flipped wrist",
+    "j6AtGrasp": -2.81,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.0005,
+    "lowestZM": 0.7925,
+    "reason": "DONE"
+  },
+  {
+    "position": {
+      "x": 0.78,
+      "y": -0.04
+    },
+    "yawDeg": 105,
+    "success": false,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -16.48,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00066,
+    "lowestZM": 0.79357,
+    "reason": "FAILED: book pose outside release tolerance (0.001 m; dx=0.000, dy=-0.000, dz=0.000 m; 180.0 deg)"
+  },
+  {
+    "position": {
+      "x": 0.78,
+      "y": -0.04
+    },
+    "yawDeg": 120,
+    "success": false,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -30.98,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00075,
+    "lowestZM": 0.79364,
+    "reason": "FAILED: book pose outside release tolerance (0.001 m; dx=0.001, dy=-0.000, dz=0.000 m; 179.9 deg)"
+  },
+  {
+    "position": {
+      "x": 0.78,
+      "y": -0.04
+    },
+    "yawDeg": 135,
+    "success": false,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -45.98,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00075,
+    "lowestZM": 0.79364,
+    "reason": "FAILED: book pose outside release tolerance (0.001 m; dx=0.000, dy=-0.000, dz=0.000 m; 179.9 deg)"
+  },
+  {
+    "position": {
+      "x": 0.78,
+      "y": -0.04
+    },
+    "yawDeg": 150,
+    "success": false,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -60.97,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00075,
+    "lowestZM": 0.79364,
+    "reason": "FAILED: book pose outside release tolerance (0.001 m; dx=0.000, dy=-0.001, dz=0.001 m; 179.9 deg)"
+  },
+  {
+    "position": {
+      "x": 0.78,
+      "y": -0.04
+    },
+    "yawDeg": 165,
+    "success": false,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -75.94,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00076,
+    "lowestZM": 0.79361,
+    "reason": "FAILED: book pose outside release tolerance (0.001 m; dx=0.000, dy=-0.001, dz=0.000 m; 179.9 deg)"
+  },
+  {
+    "position": {
+      "x": 0.78,
+      "y": -0.04
+    },
+    "yawDeg": 180,
+    "success": false,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -90.96,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00075,
+    "lowestZM": 0.79362,
+    "reason": "FAILED: book pose outside release tolerance (0.001 m; dx=0.000, dy=-0.001, dz=0.000 m; 179.9 deg)"
+  },
+  {
+    "position": {
+      "x": 0.79,
+      "y": -0.03
+    },
+    "yawDeg": 0,
+    "success": true,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -91.23,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00065,
+    "lowestZM": 0.7925,
+    "reason": "DONE"
+  },
+  {
+    "position": {
+      "x": 0.79,
+      "y": -0.03
+    },
+    "yawDeg": 15,
+    "success": true,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -104.63,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00069,
+    "lowestZM": 0.7925,
+    "reason": "DONE"
+  },
+  {
+    "position": {
+      "x": 0.79,
+      "y": -0.03
+    },
+    "yawDeg": 30,
+    "success": true,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -119.43,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00071,
+    "lowestZM": 0.7925,
+    "reason": "DONE"
+  },
+  {
+    "position": {
+      "x": 0.79,
+      "y": -0.03
+    },
+    "yawDeg": 45,
+    "success": true,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -134.52,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.0007,
+    "lowestZM": 0.7925,
+    "reason": "DONE"
+  },
+  {
+    "position": {
+      "x": 0.79,
+      "y": -0.03
+    },
+    "yawDeg": 60,
+    "success": true,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -152.17,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00043,
+    "lowestZM": 0.7925,
+    "reason": "DONE"
+  },
+  {
+    "position": {
+      "x": 0.79,
+      "y": -0.03
+    },
+    "yawDeg": 75,
+    "success": true,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -167.17,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00044,
+    "lowestZM": 0.7925,
+    "reason": "DONE"
+  },
+  {
+    "position": {
+      "x": 0.79,
+      "y": -0.03
+    },
+    "yawDeg": 90,
+    "success": true,
+    "candidate": "wide axis",
+    "j6AtGrasp": -91.23,
+    "closedFingerGapM": 0.1,
+    "tcpToBookCenterAtCloseM": 0.00065,
+    "lowestZM": 0.7925,
+    "reason": "DONE"
+  },
+  {
+    "position": {
+      "x": 0.79,
+      "y": -0.03
+    },
+    "yawDeg": 105,
+    "success": false,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -17.24,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00044,
+    "lowestZM": 0.79384,
+    "reason": "FAILED: book pose outside release tolerance (0.000 m; dx=0.000, dy=0.000, dz=0.000 m; 180.0 deg)"
+  },
+  {
+    "position": {
+      "x": 0.79,
+      "y": -0.03
+    },
+    "yawDeg": 120,
+    "success": false,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -34.77,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00067,
+    "lowestZM": 0.79383,
+    "reason": "FAILED: book pose outside release tolerance (0.001 m; dx=-0.000, dy=0.000, dz=0.000 m; 180.0 deg)"
+  },
+  {
+    "position": {
+      "x": 0.79,
+      "y": -0.03
+    },
+    "yawDeg": 135,
+    "success": false,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -50.34,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00075,
+    "lowestZM": 0.79382,
+    "reason": "FAILED: book pose outside release tolerance (0.001 m; dx=-0.000, dy=0.000, dz=0.001 m; 180.0 deg)"
+  },
+  {
+    "position": {
+      "x": 0.79,
+      "y": -0.03
+    },
+    "yawDeg": 150,
+    "success": false,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -65.25,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00074,
+    "lowestZM": 0.79383,
+    "reason": "FAILED: book pose outside release tolerance (0.001 m; dx=-0.000, dy=0.001, dz=0.001 m; 180.0 deg)"
+  },
+  {
+    "position": {
+      "x": 0.79,
+      "y": -0.03
+    },
+    "yawDeg": 165,
+    "success": false,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -79.16,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00077,
+    "lowestZM": 0.79383,
+    "reason": "FAILED: book pose outside release tolerance (0.001 m; dx=0.000, dy=0.001, dz=0.001 m; 180.0 deg)"
+  },
+  {
+    "position": {
+      "x": 0.79,
+      "y": -0.03
+    },
+    "yawDeg": 180,
+    "success": false,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -91.23,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00065,
+    "lowestZM": 0.79384,
+    "reason": "FAILED: book pose outside release tolerance (0.001 m; dx=0.001, dy=-0.000, dz=0.000 m; 179.9 deg)"
+  },
+  {
+    "position": {
+      "x": 0.8,
+      "y": -0.02
+    },
+    "yawDeg": 0,
+    "success": true,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -89.82,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00056,
+    "lowestZM": 0.7925,
+    "reason": "DONE"
+  },
+  {
+    "position": {
+      "x": 0.8,
+      "y": -0.02
+    },
+    "yawDeg": 15,
+    "success": true,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -97.08,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00074,
+    "lowestZM": 0.7925,
+    "reason": "DONE"
+  },
+  {
+    "position": {
+      "x": 0.8,
+      "y": -0.02
+    },
+    "yawDeg": 30,
+    "success": true,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -91.87,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00074,
+    "lowestZM": 0.7925,
+    "reason": "DONE"
+  },
+  {
+    "position": {
+      "x": 0.8,
+      "y": -0.02
+    },
+    "yawDeg": 45,
+    "success": true,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -72.49,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00083,
+    "lowestZM": 0.7925,
+    "reason": "DONE"
+  },
+  {
+    "position": {
+      "x": 0.8,
+      "y": -0.02
+    },
+    "yawDeg": 60,
+    "success": true,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -55.79,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00058,
+    "lowestZM": 0.7925,
+    "reason": "DONE"
+  },
+  {
+    "position": {
+      "x": 0.8,
+      "y": -0.02
+    },
+    "yawDeg": 75,
+    "success": true,
+    "candidate": "wide axis",
+    "j6AtGrasp": -80.99,
+    "closedFingerGapM": 0.1,
+    "tcpToBookCenterAtCloseM": 0.00062,
+    "lowestZM": 0.7925,
+    "reason": "DONE"
+  },
+  {
+    "position": {
+      "x": 0.8,
+      "y": -0.02
+    },
+    "yawDeg": 90,
+    "success": true,
+    "candidate": "wide axis",
+    "j6AtGrasp": -89.82,
+    "closedFingerGapM": 0.1,
+    "tcpToBookCenterAtCloseM": 0.00056,
+    "lowestZM": 0.7925,
+    "reason": "DONE"
+  },
+  {
+    "position": {
+      "x": 0.8,
+      "y": -0.02
+    },
+    "yawDeg": 105,
+    "success": false,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -94.08,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00115,
+    "lowestZM": 0.79338,
+    "reason": "FAILED: book pose outside release tolerance (0.001 m; dx=-0.000, dy=0.001, dz=0.000 m; 180.0 deg)"
+  },
+  {
+    "position": {
+      "x": 0.8,
+      "y": -0.02
+    },
+    "yawDeg": 120,
+    "success": false,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -115.73,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00063,
+    "lowestZM": 0.79377,
+    "reason": "FAILED: book pose outside release tolerance (0.000 m; dx=0.000, dy=0.000, dz=0.000 m; 180.0 deg)"
+  },
+  {
+    "position": {
+      "x": 0.8,
+      "y": -0.02
+    },
+    "yawDeg": 135,
+    "success": false,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -87.55,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00055,
+    "lowestZM": 0.7938,
+    "reason": "FAILED: book pose outside release tolerance (0.000 m; dx=0.000, dy=0.000, dz=0.000 m; 180.0 deg)"
+  },
+  {
+    "position": {
+      "x": 0.8,
+      "y": -0.02
+    },
+    "yawDeg": 150,
+    "success": false,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -76.88,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00071,
+    "lowestZM": 0.79381,
+    "reason": "FAILED: book pose outside release tolerance (0.001 m; dx=0.000, dy=0.001, dz=0.000 m; 180.0 deg)"
+  },
+  {
+    "position": {
+      "x": 0.8,
+      "y": -0.02
+    },
+    "yawDeg": 165,
+    "success": false,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -80.99,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00062,
+    "lowestZM": 0.79383,
+    "reason": "FAILED: book pose outside release tolerance (0.001 m; dx=0.000, dy=0.000, dz=0.000 m; 180.0 deg)"
+  },
+  {
+    "position": {
+      "x": 0.8,
+      "y": -0.02
+    },
+    "yawDeg": 180,
+    "success": false,
+    "candidate": "narrow axis",
+    "j6AtGrasp": -89.82,
+    "closedFingerGapM": 0.08,
+    "tcpToBookCenterAtCloseM": 0.00056,
+    "lowestZM": 0.79384,
+    "reason": "FAILED: book pose outside release tolerance (0.001 m; dx=0.000, dy=-0.000, dz=0.000 m; 180.0 deg)"
+  }
+]

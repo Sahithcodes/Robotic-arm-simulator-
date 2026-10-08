@@ -4,11 +4,14 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three';
 import { Html, OrbitControls } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
+import { useShallow } from 'zustand/react/shallow';
 import { useSimulationStore } from '../../store/simulationStore';
 import { BOOK, GRIPPER, TABLE, TASK5_WAYPOINTS } from '../../robotics/task5';
 import { RobotKinematicChain, BookMesh } from './RobotKinematicChain';
-import { clampObjectToTable, createPickPlan, evaluatePickabilityCell, PickabilityCell } from '../../robotics/autonomousPlanner';
-import { rayToTableXY } from '../../robotics/tableInteraction';
+import { createPickPlan } from '../../robotics/autonomousPlanner';
+import { PickabilityGridShape, PickabilityWorkerConfig, pickabilityCacheKey } from '../../robotics/pickabilityGrid';
+import { getOverlayMetrics, recordAnimationFrame, recordMainThreadBlock, recordSceneRender, setOverlayMetrics } from '../../robotics/overlayMetrics';
+import { PlacementSurface, rayToNearestSurface, surfaceBookZ } from '../../robotics/placementSurfaces';
 
 export type CameraView = 'perspective' | 'top' | 'front' | 'right' | 'fitRobot' | 'fitTask';
 
@@ -21,36 +24,35 @@ const cameraPresets: Record<CameraView, { position: [number, number, number]; ta
   fitTask: { position: [2.05, -2.72, 2.02], target: [0.63, -0.08, 0.76] },
 };
 
+type GridData = { shape: PickabilityGridShape; states: Uint8Array };
+const overlayGridCache = new Map<string, Map<number, GridData>>();
+const MAX_GRID_CACHE_KEYS = 8;
+function makeOverlayTexture({ shape, states }: GridData): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas'); canvas.width = shape.columns; canvas.height = shape.rows;
+  const context = canvas.getContext('2d');
+  if (!context) throw new Error('Canvas 2D context unavailable for reachability overlay');
+  const image = context.createImageData(shape.columns, shape.rows);
+  for (let ix = 0; ix < shape.columns; ix++) for (let iy = 0; iy < shape.rows; iy++) {
+    if (states[ix * shape.rows + iy] !== 2) continue;
+    const at = ((shape.rows - 1 - iy) * shape.columns + ix) * 4;
+    image.data[at] = 100; image.data[at + 1] = 183; image.data[at + 2] = 123; image.data[at + 3] = 92;
+  }
+  context.putImageData(image, 0, 0);
+  const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; texture.needsUpdate = true;
+  return texture;
+}
+
 export const Scene: React.FC<{ cameraView: CameraView; cameraRevision: number; cancelDragRef: React.MutableRefObject<() => void> }> = ({ cameraView, cameraRevision, cancelDragRef }) => {
+  recordSceneRender();
   const controlsRef = useRef<React.ElementRef<typeof OrbitControls>>(null);
   const dragPointerRef = useRef<number | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const [ghostPosition, setGhostPosition] = useState<{x:number;y:number}|null>(null);
+  const [ghostPosition, setGhostPosition] = useState<{x:number;y:number;z:number;surfaceId:string}|null>(null);
   const [ghostValid, setGhostValid] = useState(false);
   const { camera, gl } = useThree();
-  const {
-    fkResult,
-    isGripperOpen,
-    gripperCloseWidth,
-    showRobotDebug,
-    showJointLabels,
-    showGraspRegion,
-    showPath,
-    tickTask,
-    setBookPosition,
-    taskMode,
-    autonomousPlan,
-    simulatedObject,
-    setObjectDragging,
-    setObjectSelected,
-    checkObjectReachability,
-    isTaskPlaying,
-    dropTarget,
-    setDropTarget,
-    destinationPickArmed,
-    setDestinationPickArmed,
-  } = useSimulationStore();
+  const { fkResult,isGripperOpen,gripperCloseWidth,showRobotDebug,showJointLabels,showGraspRegion,showPath,setBookPosition,taskMode,autonomousPlan,simulatedObject,setObjectDragging,setObjectSelected,checkObjectReachability,isTaskPlaying,dropTarget,setDropTarget,destinationPickArmed,setDestinationPickArmed,tablePreset,placementSurfaces } = useSimulationStore(useShallow((s)=>({fkResult:s.fkResult,isGripperOpen:s.isGripperOpen,gripperCloseWidth:s.gripperCloseWidth,showRobotDebug:s.showRobotDebug,showJointLabels:s.showJointLabels,showGraspRegion:s.showGraspRegion,showPath:s.showPath,setBookPosition:s.setBookPosition,taskMode:s.taskMode,autonomousPlan:s.autonomousPlan,simulatedObject:s.simulatedObject,setObjectDragging:s.setObjectDragging,setObjectSelected:s.setObjectSelected,checkObjectReachability:s.checkObjectReachability,isTaskPlaying:s.isTaskPlaying,dropTarget:s.dropTarget,setDropTarget:s.setDropTarget,destinationPickArmed:s.destinationPickArmed,setDestinationPickArmed:s.setDestinationPickArmed,tablePreset:s.tablePreset,placementSurfaces:s.placementSurfaces})));
+  const tickTask = useSimulationStore((s) => s.tickTask);
 
   const finishObjectDrag = useCallback((pointerId?: number) => {
     if (dragPointerRef.current === null || (pointerId !== undefined && dragPointerRef.current !== pointerId)) return;
@@ -89,13 +91,13 @@ export const Scene: React.FC<{ cameraView: CameraView; cameraRevision: number; c
     const timer = window.setTimeout(() => {
       const state = useSimulationStore.getState();
       const target = { ...ghostPosition, yaw: state.dropTarget?.yaw ?? 0 };
-      const plan = createPickPlan(state.dhTable, state.simulatedObject.position, state.jointAngles, { ...target, yaw: target.yaw * Math.PI / 180 }, state.simulatedObject.rotation.yaw);
+      const plan = createPickPlan(state.dhTable, state.simulatedObject.position, state.jointAngles, { ...target, yaw: target.yaw * Math.PI / 180 }, state.simulatedObject.rotation.yaw, true, state.placementSurfaces,state.simulatedObject.surfaceId??'table');
       setGhostValid(plan.reachable);
     }, 100);
     return () => window.clearTimeout(timer);
   }, [destinationPickArmed, ghostPosition]);
 
-  useFrame((_, delta) => tickTask(Math.min(delta, 0.05)));
+  useFrame((_, delta) => { recordAnimationFrame(); tickTask(Math.min(delta, 0.05)); });
 
   useEffect(() => {
     const preset = cameraPresets[cameraView];
@@ -131,26 +133,26 @@ export const Scene: React.FC<{ cameraView: CameraView; cameraRevision: number; c
       ),
     [taskMode, autonomousPlan, fkResult]
   );
+  const targetSurface=dropTarget?placementSurfaces.find((surface)=>surface.id===(dropTarget.surfaceId??'table')):undefined;
 
   return (
     <>
       <ambientLight intensity={0.7} />
-      <directionalLight position={[1.4, -2.1, 3.2]} intensity={1.25} castShadow />
+      <directionalLight position={[1.4, -2.1, 3.2]} intensity={1.25} castShadow={tablePreset === 'compact'} />
       <pointLight position={[-1.5, 1.2, 2.2]} intensity={0.3} />
 
       {showRobotDebug && <axesHelper args={[0.32]} />}
       <gridHelper args={[1.55, 18, '#3f4a51', '#252d32']} rotation={[Math.PI / 2, 0, 0]} />
 
       <TableMesh />
-      <ReachabilityEnvelope />
-      {destinationPickArmed && <mesh position={[TABLE.center.x, TABLE.center.y, TABLE.height + 0.0005]} onPointerMove={(event) => { event.stopPropagation(); const point = rayToTableXY({ origin: event.ray.origin, direction: event.ray.direction }, TABLE.height); if (point) setGhostPosition(point); }} onPointerDown={(event) => { event.stopPropagation(); const point = rayToTableXY({ origin: event.ray.origin, direction: event.ray.direction }, TABLE.height); if (point) { const state = useSimulationStore.getState(); setDropTarget({ ...point, yaw: state.dropTarget?.yaw ?? 0 }, true); setDestinationPickArmed(false); } }}>
-        <planeGeometry args={[TABLE.width, TABLE.depth]} /><meshBasicMaterial transparent opacity={0} depthWrite={false} />
-      </mesh>}
-      {destinationPickArmed && ghostPosition && <group position={[ghostPosition.x, ghostPosition.y, TABLE.height + BOOK.size.z / 2 + 0.003]} rotation={[0,0,(dropTarget?.yaw ?? 0)*Math.PI/180]} raycast={() => null}>
+      <AdditionalSurfaceMeshes surfaces={placementSurfaces} />
+      {!isTaskPlaying && placementSurfaces.map((surface)=><ReachabilityEnvelope key={surface.id} surface={surface} />)}
+      {destinationPickArmed && placementSurfaces.map((surface)=><mesh key={surface.id} position={[surface.center.x,surface.center.y,surface.z+0.0005]} rotation={[0,0,surface.yaw]} onPointerMove={(event) => { event.stopPropagation(); const hit=rayToNearestSurface({origin:event.ray.origin,direction:event.ray.direction},placementSurfaces,simulatedObject.rotation.yaw); if(hit)setGhostPosition({...hit.point,surfaceId:hit.surfaceId}); }} onPointerDown={(event) => { event.stopPropagation(); const hit=rayToNearestSurface({origin:event.ray.origin,direction:event.ray.direction},placementSurfaces,simulatedObject.rotation.yaw); if(hit){const state=useSimulationStore.getState();setDropTarget({...hit.point,yaw:state.dropTarget?.yaw??0,surfaceId:hit.surfaceId},true);setDestinationPickArmed(false);} }}><planeGeometry args={[surface.size.width,surface.size.depth]} /><meshBasicMaterial transparent opacity={0} depthWrite={false} /></mesh>)}
+      {destinationPickArmed && ghostPosition && <group position={[ghostPosition.x, ghostPosition.y, ghostPosition.z + 0.003]} rotation={[0,0,(dropTarget?.yaw ?? 0)*Math.PI/180]} raycast={() => null}>
         <mesh raycast={() => null}><boxGeometry args={[BOOK.size.x, BOOK.size.y, 0.004]} /><meshBasicMaterial color={ghostValid ? '#49d877' : '#ed5f62'} wireframe /></mesh>
         <mesh raycast={() => null} position={[0,0,0.003]}><planeGeometry args={[BOOK.size.x, BOOK.size.y]} /><meshBasicMaterial color={ghostValid ? '#49d877' : '#ed5f62'} transparent opacity={0.16} side={THREE.DoubleSide} /></mesh>
       </group>}
-      {dropTarget && <group position={[dropTarget.x, dropTarget.y, TABLE.height + BOOK.size.z / 2 + 0.002]} rotation={[0, 0, dropTarget.yaw * Math.PI / 180]} onPointerDown={destinationPickArmed ? undefined : (event) => { if (isTaskPlaying) return; event.stopPropagation(); event.nativeEvent.preventDefault(); event.nativeEvent.stopImmediatePropagation(); dragPointerRef.current = event.pointerId; controlsRef.current && (controlsRef.current.enabled = false); (event.target as unknown as { setPointerCapture(pointerId: number): void }).setPointerCapture(event.pointerId); }} onPointerMove={destinationPickArmed ? undefined : (event) => { if (dragPointerRef.current !== event.pointerId) return; event.stopPropagation(); const point = rayToTableXY({ origin: event.ray.origin, direction: event.ray.direction }, TABLE.height); if(point) setDropTarget({...dropTarget,x:point.x,y:point.y}); }} onPointerUp={destinationPickArmed ? undefined : (event) => { if(dragPointerRef.current !== event.pointerId) return; dragPointerRef.current=null; if(controlsRef.current) controlsRef.current.enabled=true; setDropTarget(useSimulationStore.getState().dropTarget,true); (event.target as unknown as { releasePointerCapture(pointerId:number):void }).releasePointerCapture(event.pointerId); }}>
+      {dropTarget && <group position={[dropTarget.x, dropTarget.y, (dropTarget.z??(targetSurface?surfaceBookZ(targetSurface):0))+0.002]} rotation={[0, 0, dropTarget.yaw * Math.PI / 180]} onPointerDown={destinationPickArmed ? undefined : (event) => { if (isTaskPlaying) return; event.stopPropagation(); event.nativeEvent.preventDefault(); event.nativeEvent.stopImmediatePropagation(); dragPointerRef.current = event.pointerId; controlsRef.current && (controlsRef.current.enabled = false); (event.target as unknown as { setPointerCapture(pointerId: number): void }).setPointerCapture(event.pointerId); }} onPointerMove={destinationPickArmed ? undefined : (event) => { if (dragPointerRef.current !== event.pointerId) return; event.stopPropagation(); const hit=rayToNearestSurface({origin:event.ray.origin,direction:event.ray.direction},placementSurfaces,dropTarget.yaw*Math.PI/180); if(hit)setDropTarget({...dropTarget,...hit.point,surfaceId:hit.surfaceId}); }} onPointerUp={destinationPickArmed ? undefined : (event) => { if(dragPointerRef.current !== event.pointerId) return; dragPointerRef.current=null; if(controlsRef.current) controlsRef.current.enabled=true; setDropTarget(useSimulationStore.getState().dropTarget,true); (event.target as unknown as { releasePointerCapture(pointerId:number):void }).releasePointerCapture(event.pointerId); }}>
         <mesh raycast={destinationPickArmed ? () => null : undefined}><boxGeometry args={[BOOK.size.x, BOOK.size.y, 0.004]} /><meshBasicMaterial color="#42d9e8" wireframe /></mesh>
         <mesh raycast={destinationPickArmed ? () => null : undefined} position={[0,0,0.006]}><planeGeometry args={[BOOK.size.x, BOOK.size.y]} /><meshBasicMaterial color="#42d9e8" transparent opacity={0.12} side={THREE.DoubleSide} /></mesh>
         <Html position={[0, 0, 0.02]} center distanceFactor={1.5} style={{ color: '#42d9e8', fontSize: '11px', fontWeight: 700, pointerEvents: 'none' }}>PLACE</Html>
@@ -183,9 +185,8 @@ export const Scene: React.FC<{ cameraView: CameraView; cameraRevision: number; c
             event.stopPropagation();
             event.nativeEvent.preventDefault();
             event.nativeEvent.stopImmediatePropagation();
-            const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -TABLE.height);
-            const point = event.ray.intersectPlane(plane, new THREE.Vector3());
-            if (point) setBookPosition(clampObjectToTable(point, simulatedObject.rotation.yaw));
+            const hit=rayToNearestSurface({origin:event.ray.origin,direction:event.ray.direction},placementSurfaces,simulatedObject.rotation.yaw);
+            if(hit)setBookPosition(hit.point,hit.surfaceId);
           }}
           onPointerUp={(event) => {
             event.stopPropagation();
@@ -307,70 +308,51 @@ const TableMesh: React.FC = () => {
   );
 };
 
-const ReachabilityEnvelope: React.FC = () => {
-  const { dhTable, jointAngles, simulatedObject, isTaskPlaying, dropTarget, tablePreset } = useSimulationStore();
-  const [cells, setCells] = useState<PickabilityCell[]>([]);
-  const cache = useRef(new Map<string, PickabilityCell[]>());
+const AdditionalSurfaceMeshes:React.FC<{surfaces:PlacementSurface[]}>=({surfaces})=><>
+  {surfaces.filter((surface)=>surface.id!=='table').map((surface)=>{
+    const thickness=surface.tray?.floorThickness??.025,legs=surface.support.type==='legs';
+    return <group key={surface.id} position={[surface.center.x,surface.center.y,0]} rotation={[0,0,surface.yaw]}>
+      {surface.shape==='rectangle'?<mesh position={[0,0,surface.z-thickness/2]} castShadow receiveShadow><boxGeometry args={[surface.size.width,surface.size.depth,thickness]}/><meshStandardMaterial color={surface.color} roughness={.68}/></mesh>:<mesh position={[0,0,surface.z]} rotation={[0,0,0]}><ringGeometry args={[surface.size.innerRadius??.1,surface.size.outerRadius??.2,48,surface.size.startAngle??0,(surface.size.endAngle??Math.PI*2)-(surface.size.startAngle??0)]}/><meshStandardMaterial color={surface.color} side={THREE.DoubleSide}/></mesh>}
+      {surface.support.type==='column'&&<mesh position={[0,0,(surface.support.height??surface.z)/2]}><cylinderGeometry args={[surface.support.radius??.035,surface.support.radius??.035,surface.support.height??surface.z,16]}/><meshStandardMaterial color="#41484d"/></mesh>}
+      {legs&&[[-1,-1],[1,-1],[-1,1],[1,1]].map(([sx,sy])=><mesh key={`${sx}:${sy}`} position={[sx*(surface.size.width/2-.025),sy*(surface.size.depth/2-.025),(surface.z-thickness)/2]}><boxGeometry args={[surface.support.width??.025,surface.support.depth??.025,surface.support.height??surface.z-thickness]}/><meshStandardMaterial color="#454d51"/></mesh>)}
+      {surface.tray&&<>{[[-1,0],[1,0]].map(([sx])=><mesh key={`wall-x-${sx}`} position={[sx*(surface.size.width/2-.004),0,surface.z+surface.tray!.wallHeight/2]}><boxGeometry args={[.008,surface.size.depth,surface.tray!.wallHeight]}/><meshStandardMaterial color={surface.color}/></mesh>)}{[[-1,0],[1,0]].map(([,sy])=><mesh key={`wall-y-${sy}`} position={[0,sy*(surface.size.depth/2-.004),surface.z+surface.tray!.wallHeight/2]}><boxGeometry args={[surface.size.width,.008,surface.tray!.wallHeight]}/><meshStandardMaterial color={surface.color}/></mesh>)}</>}
+    </group>;
+  })}
+</>;
+
+const ReachabilityEnvelope: React.FC<{surface:PlacementSurface}> = ({surface}) => {
+  const { dhTable, jointAngles, bookYaw, tablePreset, enabled, simulatedObject, placementSurfaces } = useSimulationStore(useShallow((s) => ({ dhTable:s.dhTable,jointAngles:s.jointAngles,bookYaw:s.simulatedObject.rotation.yaw,tablePreset:s.tablePreset,enabled:s.showReachabilityOverlay,simulatedObject:s.simulatedObject,placementSurfaces:s.placementSurfaces })));
+  const [texture, setTexture] = useState<THREE.CanvasTexture | null>(null);
+  const textureRef = useRef<THREE.CanvasTexture | null>(null);
   useEffect(() => {
-    if (isTaskPlaying) return;
-    const yaw = simulatedObject.rotation.yaw;
-    const key = `${tablePreset}:${TABLE.width}:${TABLE.depth}:${TABLE.height}:${TABLE.topThickness}:${TABLE.center.x}:${TABLE.center.y}:${BOOK.size.x}:${BOOK.size.y}:${BOOK.size.z}:${dhTable.map((link) => `${link.a},${link.alpha},${link.d},${link.thetaMin},${link.thetaMax}`).join(';')}:${yaw.toFixed(4)}:${jointAngles.map((q) => q.toFixed(3)).join(',')}`;
-    const cached = cache.current.get(key);
-    if (cached) { setCells(cached); return; }
-    setCells([]);
-    const timer = window.setTimeout(() => {
-      const computed: PickabilityCell[] = [];
-      const points: { x: number; y: number; z: number }[] = [];
-      const step = 0.01;
-      const xmin = TABLE.center.x - TABLE.width / 2 + step / 2;
-      const xmax = TABLE.center.x + TABLE.width / 2;
-      const ymin = TABLE.center.y - TABLE.depth / 2 + step / 2;
-      const ymax = TABLE.center.y + TABLE.depth / 2;
-      for (let x = xmin; x < xmax; x += step) for (let y = ymin; y < ymax; y += step) points.push({ x, y, z: simulatedObject.position.z });
-      let index = 0;
-      let frame = 0;
-      const process = () => {
-        const end = Math.min(index + 2, points.length);
-        for (; index < end; index++) computed.push(evaluatePickabilityCell(dhTable, jointAngles, points[index], yaw, dropTarget ? { ...dropTarget, yaw: dropTarget.yaw * Math.PI / 180 } : null));
-        if (index < points.length) frame = window.requestAnimationFrame(process);
-        else {
-          cache.current.set(key, computed);
-          if (cache.current.size > 12) cache.current.delete(cache.current.keys().next().value as string);
-          setCells(computed);
-        }
-      };
-      frame = window.requestAnimationFrame(process);
-      cleanupFrame = () => window.cancelAnimationFrame(frame);
-    }, 300);
-    let cleanupFrame = () => {};
-    return () => { window.clearTimeout(timer); cleanupFrame(); };
-  }, [dhTable, dropTarget, isTaskPlaying, jointAngles, simulatedObject.position.z, simulatedObject.rotation.yaw, tablePreset]);
-
-  const geometry = useMemo(() => {
-    const geometry = new THREE.BufferGeometry();
-    const vertices: number[] = [];
-    const indices: number[] = [];
-    const step = 0.01;
-    for (const cell of cells) {
-      if (cell.reachable) {
-        const x = cell.position.x - TABLE.center.x - step / 2;
-        const y = cell.position.y - TABLE.center.y - step / 2;
-        const base = vertices.length / 3;
-        vertices.push(x, y, 0, x + step, y, 0, x + step, y + step, 0, x, y + step, 0);
-        indices.push(base, base + 1, base + 2, base, base + 2, base + 3);
-      }
-    }
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-    geometry.setIndex(indices);
-    geometry.computeVertexNormals();
-    return geometry;
-  }, [cells]);
-
-  useEffect(() => () => geometry.dispose(), [geometry]);
-
-  return (
-    <mesh position={[TABLE.center.x, TABLE.center.y, TABLE.height + 0.002]} geometry={geometry} raycast={() => null}>
-      <meshBasicMaterial color="#64b77b" transparent opacity={0.16} side={THREE.DoubleSide} depthWrite={false} />
-    </mesh>
-  );
+    if (!enabled) { textureRef.current?.dispose();textureRef.current=null;setTexture(null);return; }
+    setOverlayMetrics({surfaceReachability:{...getOverlayMetrics().surfaceReachability,[surface.id]:{pickablePct:null,placeablePct:null}}});
+    const yawRad = Math.round(bookYaw * 180 / Math.PI) * Math.PI / 180;
+    const config: PickabilityWorkerConfig = { preset:tablePreset,dhTable,jointAngles,yawRad,bookZ:surfaceBookZ(surface),surface,surfaces:placementSurfaces };
+    const key = pickabilityCacheKey(config), cached = overlayGridCache.get(key), coarseStep=.03, fineStep=.01;
+    if (cached?.has(coarseStep)) { const grid=cached.get(coarseStep)!; textureRef.current?.dispose(); const next=makeOverlayTexture(grid); textureRef.current=next; setTexture(next);setOverlayMetrics({gridCells:grid.shape.count,firstPaintMs:0,fullGridMs:cached.has(fineStep)?0:-1,stepM:coarseStep}); }
+    const runPlaceOnly=!!cached?.has(fineStep);
+    if (cached?.has(fineStep)) { const grid=cached.get(fineStep)!; textureRef.current?.dispose(); const next=makeOverlayTexture(grid); textureRef.current=next; setTexture(next);const valid=grid.states.reduce((n,state)=>n+(state>0?1:0),0),reachable=grid.states.reduce((n,state)=>n+(state===2?1:0),0);setOverlayMetrics({gridCells:grid.shape.count,firstPaintMs:0,fullGridMs:0,stepM:fineStep,surfaceReachability:{...getOverlayMetrics().surfaceReachability,[surface.id]:{pickablePct:valid?100*reachable/valid:0,placeablePct:null}}}); }
+    let live=true, jobId=Date.now()+Math.floor(Math.random()*1000), worker:Worker|null=null, started=0;
+    const startWorker=(delay:number,steps:number[])=>window.setTimeout(()=>{
+      if(!live)return;
+      worker=new Worker(new URL('../../robotics/pickability.worker.ts',import.meta.url),{type:'module'});
+      worker.onmessage=(event:MessageEvent<any>)=>{const blockStart=performance.now();try{const msg=event.data;if(!live||msg.jobId!==jobId)return;
+        if(msg.type==='stageStart'){workerGrid.set(msg.stepM,{shape:msg.shape,states:new Uint8Array(msg.shape.count),reasons:new Uint8Array(msg.shape.count)});}
+        if(msg.type==='chunk'){const target=workerGrid.get(msg.stepM);if(target){target.states.set(msg.states,msg.start);target.reasons.set(msg.reasons,msg.start);}}
+        if(msg.type==='stageComplete'){const result=workerGrid.get(msg.stepM);if(!result)return;const reachable=result.states.reduce((n,state)=>n+(state===2?1:0),0),valid=result.states.reduce((n,state)=>n+(state>0?1:0),0),percentage=valid?100*reachable/valid:0;const report={...getOverlayMetrics().surfaceReachability,[surface.id]:{...(getOverlayMetrics().surfaceReachability[surface.id]??{pickablePct:null,placeablePct:null}),[msg.mode==='place'?'placeablePct':'pickablePct']:msg.stepM===fineStep?percentage:(getOverlayMetrics().surfaceReachability[surface.id]?.[msg.mode==='place'?'placeablePct':'pickablePct']??null)}};setOverlayMetrics({surfaceReachability:report});if(msg.mode==='place')return;const grid={shape:result.shape,states:result.states};let entry=overlayGridCache.get(key);if(!entry){entry=new Map();overlayGridCache.set(key,entry);}entry.set(msg.stepM,grid);while(overlayGridCache.size>MAX_GRID_CACHE_KEYS)overlayGridCache.delete(overlayGridCache.keys().next().value as string);textureRef.current?.dispose();const next=makeOverlayTexture(grid);textureRef.current=next;setTexture(next);const elapsed=performance.now()-started;const nextTiming=msg.stepM===coarseStep?{firstPaintMs:elapsed,fullGridMs:-1,stepM:msg.stepM}:{firstPaintMs:coarseCached?0:elapsed,fullGridMs:elapsed,stepM:msg.stepM};setOverlayMetrics({gridCells:result.shape.count,firstPaintMs:nextTiming.firstPaintMs,fullGridMs:nextTiming.fullGridMs,workerComputeMs:msg.totalMs,stepM:msg.stepM});}
+        if(msg.type==='jobComplete'&&msg.mode==='pick')worker?.postMessage({type:'start',jobId,config:{...config,mode:'place',yawRad:0,sourcePosition:simulatedObject.position,sourceSurfaceId:simulatedObject.surfaceId??'table',surfaces:placementSurfaces},stepsM:[coarseStep,fineStep],chunkSize:8});
+      }finally{recordMainThreadBlock(performance.now()-blockStart);}};
+      const placementConfig={...config,mode:'place' as const,yawRad:0,sourcePosition:simulatedObject.position,sourceSurfaceId:simulatedObject.surfaceId??'table',surfaces:placementSurfaces};
+      worker.postMessage({type:'start',jobId,config:runPlaceOnly?placementConfig:config,stepsM:runPlaceOnly?[coarseStep,fineStep]:steps,chunkSize:8});
+    },delay);
+    const workerGrid=new Map<number,{shape:PickabilityGridShape;states:Uint8Array;reasons:Uint8Array}>();
+    const coarseCached=!!cached?.has(coarseStep); started=performance.now();
+    const delay=window.setTimeout(()=>{started=performance.now();},300);
+    const startTimer=startWorker(300,cached?.has(coarseStep)?[fineStep]:[coarseStep,fineStep]);
+    return ()=>{live=false;window.clearTimeout(delay);window.clearTimeout(startTimer);if(worker){worker.postMessage({type:'cancel',jobId});worker.terminate();}};
+  }, [bookYaw, dhTable, enabled, jointAngles, placementSurfaces, simulatedObject, tablePreset, surface]);
+  useEffect(()=>()=>textureRef.current?.dispose(),[]);
+  if (!enabled || !texture) return null;
+  return <mesh position={[surface.center.x,surface.center.y,surface.z+.002]} rotation={[0,0,surface.yaw]} raycast={()=>null}><planeGeometry args={[surface.size.width,surface.size.depth]} /><meshBasicMaterial map={texture} transparent side={THREE.DoubleSide} depthWrite={false} /></mesh>;
 };

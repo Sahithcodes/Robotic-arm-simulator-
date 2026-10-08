@@ -1,0 +1,2748 @@
+{
+  "seed": 202013383,
+  "cases": [
+    {
+      "i": 0,
+      "book": {
+        "x": 0.6255834113527089,
+        "y": -0.005855894936248662
+      },
+      "bookYawDeg": 2,
+      "destination": {
+        "x": 0.7939363107271492,
+        "y": -0.03536693007685244
+      },
+      "destinationYawDeg": 132,
+      "reason": "joint limit at PRE-PLACE",
+      "structuredFailure": {
+        "stage": "PRE-PLACE",
+        "kind": "IK non-convergence",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.11950950516313116,
+          -0.19234007409409348,
+          0.06724905591521829,
+          1.0895773330455576,
+          0.38247274312585666,
+          1.185348370419994
+        ],
+        "tiltDeg": 29.999999999999996,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true,
+      "success": false
+    },
+    {
+      "i": 1,
+      "book": {
+        "x": 0.7634895429387688,
+        "y": -0.050751020582392815
+      },
+      "bookYawDeg": 7,
+      "destination": {
+        "x": 0.6170427698735147,
+        "y": -0.024243045328184963
+      },
+      "destinationYawDeg": 35,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null,
+      "success": false
+    },
+    {
+      "i": 2,
+      "book": {
+        "x": 0.6591827075276524,
+        "y": -0.0479349550884217
+      },
+      "bookYawDeg": 173,
+      "destination": {
+        "x": 0.806449639191851,
+        "y": -0.030624160831794145
+      },
+      "destinationYawDeg": 125,
+      "reason": "joint limit at PRE-PLACE",
+      "structuredFailure": {
+        "stage": "PRE-PLACE",
+        "kind": "IK non-convergence",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.12465601490892181,
+          -0.09183359761918858,
+          -0.06607657167523656,
+          1.2437385631804747,
+          0.4672291067655653,
+          1.274977906787519
+        ],
+        "tiltDeg": 29.999999999999996,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true,
+      "success": false
+    },
+    {
+      "i": 3,
+      "book": {
+        "x": 0.7834433663077652,
+        "y": -0.016725562522187827
+      },
+      "bookYawDeg": 59,
+      "destination": {
+        "x": 0.6349578132759779,
+        "y": -0.025643348237499593
+      },
+      "destinationYawDeg": 49,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null,
+      "success": false
+    },
+    {
+      "i": 4,
+      "book": {
+        "x": 0.6293363159149885,
+        "y": -0.015581466453149916
+      },
+      "bookYawDeg": 138,
+      "destination": {
+        "x": 0.8002866284549236,
+        "y": -0.03382821028120816
+      },
+      "destinationYawDeg": 133,
+      "reason": "joint limit at PRE-PLACE",
+      "structuredFailure": {
+        "stage": "PRE-PLACE",
+        "kind": "IK non-convergence",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.12007868976604998,
+          -0.06380821482664159,
+          -0.04747111655662348,
+          1.056550759295375,
+          0.4663154087591148,
+          1.2313297784987214
+        ],
+        "tiltDeg": 29.999999999999996,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true,
+      "success": false
+    },
+    {
+      "i": 5,
+      "book": {
+        "x": 0.7709007960371673,
+        "y": -0.05306654312647879
+      },
+      "bookYawDeg": 41,
+      "destination": {
+        "x": 0.6211102242488413,
+        "y": -0.048070050878450274
+      },
+      "destinationYawDeg": 50,
+      "reason": "joint limit at RETREAT",
+      "structuredFailure": {
+        "stage": "RETREAT",
+        "kind": "orientation limit",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.07723978114430755,
+          0.31703429259780397,
+          -1.2697752019327935,
+          0,
+          0.9527409093349897,
+          3.7624845732432175
+        ],
+        "tiltDeg": 0,
+        "ikSeedUsed": 9
+      },
+      "validOverlays": true,
+      "plannerBug": true,
+      "success": false
+    },
+    {
+      "i": 6,
+      "book": {
+        "x": 0.6456099040806293,
+        "y": -0.018910046862438322
+      },
+      "bookYawDeg": 131,
+      "destination": {
+        "x": 0.8035123049747198,
+        "y": -0.06958755507133901
+      },
+      "destinationYawDeg": 14,
+      "reason": "joint limit at PLACE",
+      "structuredFailure": {
+        "stage": "PLACE",
+        "kind": "joint limit",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.08716231994075196,
+          0.020505564875404895,
+          -0.010671589980655155,
+          2.9670597283903604,
+          0.03686840982343735,
+          1.4084148608349476
+        ],
+        "tiltDeg": 0,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true,
+      "success": false
+    },
+    {
+      "i": 7,
+      "book": {
+        "x": 0.6284896056074649,
+        "y": -0.057037131590768696
+      },
+      "bookYawDeg": 110,
+      "destination": {
+        "x": 0.7826802003756165,
+        "y": -0.057180391820147634
+      },
+      "destinationYawDeg": 49,
+      "reason": "joint limit at RETREAT",
+      "structuredFailure": {
+        "stage": "RETREAT",
+        "kind": "joint limit",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.07070128899544843,
+          -0.24434839374723769,
+          0.07306995792412307,
+          2.9670597283903604,
+          -0.15801592127395145,
+          0.7541459209830143
+        ],
+        "tiltDeg": 0,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true,
+      "success": false
+    },
+    {
+      "i": 8,
+      "book": {
+        "x": 0.7679604308493435,
+        "y": -0.05975140334106982
+      },
+      "bookYawDeg": 140,
+      "destination": {
+        "x": 0.6174273711442947,
+        "y": -0.04869584237225354
+      },
+      "destinationYawDeg": 165,
+      "reason": "link-vs-base collision at PLACE",
+      "structuredFailure": {
+        "stage": "PLACE",
+        "kind": "link-vs-base collision",
+        "linkName": "upper-arm",
+        "otherPrimitive": "pedestal-column-cylinder (center=(0,0,z=590 mm); radius=95 mm; height=620 mm; z=280–900 mm)",
+        "penetrationMm": 19.836649444542566,
+        "sampleZMm": 889.3853257839204,
+        "jointAngles": [
+          -0.078706018014431,
+          0.6461172515754537,
+          -1.3748750048610872,
+          0,
+          0.7287577532856335,
+          -4.529295610599971
+        ],
+        "tiltDeg": 0,
+        "ikSeedUsed": 9
+      },
+      "validOverlays": true,
+      "plannerBug": true,
+      "success": false
+    },
+    {
+      "i": 9,
+      "book": {
+        "x": 0.6292484855279326,
+        "y": -0.013155004205182196
+      },
+      "bookYawDeg": 90,
+      "destination": {
+        "x": 0.8090217096172273,
+        "y": -0.03325663172639906
+      },
+      "destinationYawDeg": 7,
+      "reason": "joint limit at PLACE",
+      "structuredFailure": {
+        "stage": "PLACE",
+        "kind": "joint limit",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.04211323570032204,
+          0.020021225382088573,
+          -0.009604437845982673,
+          2.9670597283903604,
+          0.05042147536315532,
+          1.5713188690715825
+        ],
+        "tiltDeg": 0,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true,
+      "success": false
+    },
+    {
+      "i": 10,
+      "book": {
+        "x": 0.6175266433507204,
+        "y": -0.048066783146932725
+      },
+      "bookYawDeg": 47,
+      "destination": {
+        "x": 0.7840040328726172,
+        "y": -0.04995270353741944
+      },
+      "destinationYawDeg": 131,
+      "reason": "joint limit at RETREAT",
+      "structuredFailure": {
+        "stage": "RETREAT",
+        "kind": "joint limit",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.06138647748473149,
+          -0.23793805146958621,
+          0.059539006082896466,
+          2.9670597283903604,
+          -0.1624996734360537,
+          -0.6700027851738157
+        ],
+        "tiltDeg": 0,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true,
+      "success": false
+    },
+    {
+      "i": 11,
+      "book": {
+        "x": 0.7703850539866834,
+        "y": -0.03279394405893982
+      },
+      "bookYawDeg": 21,
+      "destination": {
+        "x": 0.6214634072221815,
+        "y": -0.03519434557296336
+      },
+      "destinationYawDeg": 158,
+      "reason": "link-vs-base collision at PLACE",
+      "structuredFailure": {
+        "stage": "PLACE",
+        "kind": "link-vs-base collision",
+        "linkName": "upper-arm",
+        "otherPrimitive": "pedestal-column-cylinder (center=(0,0,z=590 mm); radius=95 mm; height=620 mm; z=280–900 mm)",
+        "penetrationMm": 19.337169985763737,
+        "sampleZMm": 890.0515066665621,
+        "jointAngles": [
+          -0.05657097953310025,
+          0.6405848033851406,
+          -1.3624678353388409,
+          0,
+          0.7218830319537002,
+          1.8981977827005492
+        ],
+        "tiltDeg": 0,
+        "ikSeedUsed": 9
+      },
+      "validOverlays": true,
+      "plannerBug": true,
+      "success": false
+    },
+    {
+      "i": 12,
+      "book": {
+        "x": 0.6574585180636495,
+        "y": -0.05762176058255136
+      },
+      "bookYawDeg": 71,
+      "destination": {
+        "x": 0.8077548658289015,
+        "y": -0.04099590406753123
+      },
+      "destinationYawDeg": 120,
+      "reason": "joint limit at PRE-PLACE",
+      "structuredFailure": {
+        "stage": "PRE-PLACE",
+        "kind": "IK non-convergence",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.14152659799834802,
+          -0.08670692081980402,
+          -0.06607657167523656,
+          1.2703278435113439,
+          0.4819045329005041,
+          1.3042927454364877
+        ],
+        "tiltDeg": 29.999999999999996,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true,
+      "success": false
+    },
+    {
+      "i": 13,
+      "book": {
+        "x": 0.7877918846346438,
+        "y": -0.04174435810185969
+      },
+      "bookYawDeg": 36,
+      "destination": {
+        "x": 0.6049970156606286,
+        "y": -0.011908459579572081
+      },
+      "destinationYawDeg": 92,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null,
+      "success": false
+    },
+    {
+      "i": 14,
+      "book": {
+        "x": 0.6387966765090822,
+        "y": -0.07045329940505327
+      },
+      "bookYawDeg": 16,
+      "destination": {
+        "x": 0.7939340585563331,
+        "y": -0.04054024043492973
+      },
+      "destinationYawDeg": 63,
+      "reason": "joint limit at RETREAT",
+      "structuredFailure": {
+        "stage": "RETREAT",
+        "kind": "joint limit",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.048836662770770395,
+          -0.2160431289991757,
+          0.01574286855865484,
+          2.9670597283903604,
+          -0.14832412350203414,
+          0.536817919080948
+        ],
+        "tiltDeg": 0,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true,
+      "success": false
+    },
+    {
+      "i": 15,
+      "book": {
+        "x": 0.7799763764534146,
+        "y": -0.05865927609615028
+      },
+      "bookYawDeg": 93,
+      "destination": {
+        "x": 0.6290605485625564,
+        "y": -0.028318117568269373
+      },
+      "destinationYawDeg": 44,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null,
+      "success": false
+    },
+    {
+      "i": 16,
+      "book": {
+        "x": 0.7628677688445895,
+        "y": -0.04988285220228136
+      },
+      "bookYawDeg": 119,
+      "destination": {
+        "x": 0.6171794287487864,
+        "y": -0.01711695027537644
+      },
+      "destinationYawDeg": 43,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null,
+      "success": false
+    },
+    {
+      "i": 17,
+      "book": {
+        "x": 0.6347496734280139,
+        "y": -0.022102426094934343
+      },
+      "bookYawDeg": 140,
+      "destination": {
+        "x": 0.801146186189726,
+        "y": -0.01304084445349872
+      },
+      "destinationYawDeg": 78,
+      "reason": "joint limit at PLACE",
+      "structuredFailure": {
+        "stage": "PLACE",
+        "kind": "orientation limit",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.016752096666904047,
+          0.014434560441704632,
+          0.002514666262329806,
+          2.9670597283903604,
+          0.02249116812205668,
+          0.3627293037781054
+        ],
+        "tiltDeg": 0,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true,
+      "success": false
+    },
+    {
+      "i": 18,
+      "book": {
+        "x": 0.6355716233141719,
+        "y": -0.024376392373815177
+      },
+      "bookYawDeg": 122,
+      "destination": {
+        "x": 0.7784529813565313,
+        "y": -0.06408494637347759
+      },
+      "destinationYawDeg": 26,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null,
+      "success": false
+    },
+    {
+      "i": 19,
+      "book": {
+        "x": 0.6271284084487706,
+        "y": -0.049213940752670174
+      },
+      "bookYawDeg": 137,
+      "destination": {
+        "x": 0.7890154134389012,
+        "y": -0.04510735413990915
+      },
+      "destinationYawDeg": 92,
+      "reason": "joint limit at RETREAT",
+      "structuredFailure": {
+        "stage": "RETREAT",
+        "kind": "joint limit",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.05486598266730001,
+          -0.22149326649437828,
+          0.0257494526225528,
+          2.9670597283903604,
+          -0.16216047971366243,
+          0.017841469870253143
+        ],
+        "tiltDeg": 0,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true,
+      "success": false
+    },
+    {
+      "i": 20,
+      "book": {
+        "x": 0.6717914138827472,
+        "y": -0.05561394664458931
+      },
+      "bookYawDeg": 25,
+      "destination": {
+        "x": 0.8181712597142905,
+        "y": -0.012741741081699728
+      },
+      "destinationYawDeg": 99,
+      "reason": "Destination out of reach on Table at this height at PRE-PLACE",
+      "structuredFailure": {
+        "stage": "PRE-PLACE",
+        "kind": "IK non-convergence",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.12084652768927615,
+          -0.0939453697463329,
+          -0.06554323226820533,
+          1.3911051793251856,
+          0.5282772666607892,
+          1.4559245871104982
+        ],
+        "tiltDeg": 29.999999999999996,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true,
+      "success": false
+    },
+    {
+      "i": 21,
+      "book": {
+        "x": 0.6521975638810544,
+        "y": -0.028069280562922357
+      },
+      "bookYawDeg": 0,
+      "destination": {
+        "x": 0.8002557657193392,
+        "y": -0.05253112121485174
+      },
+      "destinationYawDeg": 37,
+      "reason": "joint limit at PLACE",
+      "structuredFailure": {
+        "stage": "PLACE",
+        "kind": "joint limit",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.06589550761007264,
+          0.02253746168666927,
+          -0.015010564334179627,
+          2.9670597283903604,
+          0.01607580314668118,
+          1.032595475005456
+        ],
+        "tiltDeg": 0,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true,
+      "success": false
+    },
+    {
+      "i": 22,
+      "book": {
+        "x": 0.7658870095666498,
+        "y": -0.013610565578565
+      },
+      "bookYawDeg": 165,
+      "destination": {
+        "x": 0.6166883730236441,
+        "y": -0.025664534149691463
+      },
+      "destinationYawDeg": 145,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null,
+      "success": false
+    },
+    {
+      "i": 23,
+      "book": {
+        "x": 0.6039769203402101,
+        "y": -0.020239765206351876
+      },
+      "bookYawDeg": 80,
+      "destination": {
+        "x": 0.7786609695293009,
+        "y": -0.016135958591476082
+      },
+      "destinationYawDeg": 143,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null,
+      "success": false
+    },
+    {
+      "i": 24,
+      "book": {
+        "x": 0.622272494006902,
+        "y": -0.03214708865620196
+      },
+      "bookYawDeg": 36,
+      "destination": {
+        "x": 0.7981621032394468,
+        "y": -0.025201322892680764
+      },
+      "destinationYawDeg": 115,
+      "reason": "joint limit at PRE-PLACE",
+      "structuredFailure": {
+        "stage": "PRE-PLACE",
+        "kind": "IK non-convergence",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.1286174869486814,
+          -0.08849712100154393,
+          -0.06546487159325232,
+          1.1115836974296236,
+          0.5266635955696908,
+          1.4531603268635511
+        ],
+        "tiltDeg": 29.999999999999996,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true,
+      "success": false
+    },
+    {
+      "i": 25,
+      "book": {
+        "x": 0.8087639482319354,
+        "y": -0.01576830987818539
+      },
+      "bookYawDeg": 104,
+      "destination": {
+        "x": 0.6349539403337985,
+        "y": -0.017766337199136614
+      },
+      "destinationYawDeg": 27,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null,
+      "success": false
+    },
+    {
+      "i": 26,
+      "book": {
+        "x": 0.7595405712723732,
+        "y": -0.016670436607673762
+      },
+      "bookYawDeg": 31,
+      "destination": {
+        "x": 0.6094457977823913,
+        "y": -0.06540185549296439
+      },
+      "destinationYawDeg": 12,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null,
+      "success": false
+    },
+    {
+      "i": 27,
+      "book": {
+        "x": 0.8106938168592751,
+        "y": -0.0189583554957062
+      },
+      "bookYawDeg": 111,
+      "destination": {
+        "x": 0.6412678457237779,
+        "y": -0.06872559861280024
+      },
+      "destinationYawDeg": 4,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null,
+      "success": false
+    },
+    {
+      "i": 28,
+      "book": {
+        "x": 0.7671485003922134,
+        "y": -0.04713031771592796
+      },
+      "bookYawDeg": 63,
+      "destination": {
+        "x": 0.617209626045078,
+        "y": -0.04996717982925475
+      },
+      "destinationYawDeg": 161,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null,
+      "success": false
+    },
+    {
+      "i": 29,
+      "book": {
+        "x": 0.6270959285832941,
+        "y": -0.051301047960296275
+      },
+      "bookYawDeg": 115,
+      "destination": {
+        "x": 0.785751327946782,
+        "y": -0.01681545396335423
+      },
+      "destinationYawDeg": 45,
+      "reason": "joint limit at RETREAT",
+      "structuredFailure": {
+        "stage": "RETREAT",
+        "kind": "joint limit",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.019150765094717092,
+          -0.23578084378711253,
+          0.055005180011559025,
+          2.9670597283903604,
+          -0.1637221455192859,
+          0.872529546262964
+        ],
+        "tiltDeg": 0,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true,
+      "success": false
+    },
+    {
+      "i": 30,
+      "book": {
+        "x": 0.6114359557162969,
+        "y": -0.03738130583427846
+      },
+      "bookYawDeg": 3,
+      "destination": {
+        "x": 0.7607132258731871,
+        "y": -0.032611954314634206
+      },
+      "destinationYawDeg": 104,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null,
+      "success": false
+    },
+    {
+      "i": 31,
+      "book": {
+        "x": 0.7914641125593334,
+        "y": -0.04457592043094337
+      },
+      "bookYawDeg": 121,
+      "destination": {
+        "x": 0.6401211505383253,
+        "y": -0.035080637233331796
+      },
+      "destinationYawDeg": 121,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null,
+      "success": false
+    },
+    {
+      "i": 32,
+      "book": {
+        "x": 0.7933633250650018,
+        "y": -0.06416651002131403
+      },
+      "bookYawDeg": 135,
+      "destination": {
+        "x": 0.6449866534490138,
+        "y": -0.06376745264045894
+      },
+      "destinationYawDeg": 52,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null,
+      "success": false
+    },
+    {
+      "i": 33,
+      "book": {
+        "x": 0.7705169817991554,
+        "y": -0.05800449998117983
+      },
+      "bookYawDeg": 25,
+      "destination": {
+        "x": 0.6245561606995761,
+        "y": -0.020204957211390137
+      },
+      "destinationYawDeg": 37,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null,
+      "success": false
+    },
+    {
+      "i": 34,
+      "book": {
+        "x": 0.8091634576860816,
+        "y": -0.04313644963316619
+      },
+      "bookYawDeg": 82,
+      "destination": {
+        "x": 0.645687916111201,
+        "y": -0.03480699547566474
+      },
+      "destinationYawDeg": 122,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null,
+      "success": false
+    },
+    {
+      "i": 35,
+      "book": {
+        "x": 0.6323530546296388,
+        "y": -0.029105582190677524
+      },
+      "bookYawDeg": 29,
+      "destination": {
+        "x": 0.7933298474363982,
+        "y": -0.043195775533095004
+      },
+      "destinationYawDeg": 177,
+      "reason": "joint limit at PRE-PLACE",
+      "structuredFailure": {
+        "stage": "PRE-PLACE",
+        "kind": "joint limit",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.0492777742520218,
+          0.08107932139890578,
+          -0.06607657167523656,
+          2.9670597283903604,
+          -0.7340307466495908,
+          -1.5474251390780995
+        ],
+        "tiltDeg": 29.999999999999996,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true,
+      "success": false
+    },
+    {
+      "i": 36,
+      "book": {
+        "x": 0.6425573925022036,
+        "y": -0.031754211066290734
+      },
+      "bookYawDeg": 89,
+      "destination": {
+        "x": 0.7900373313948512,
+        "y": -0.052174632074311375
+      },
+      "destinationYawDeg": 21,
+      "reason": "joint limit at RETREAT",
+      "structuredFailure": {
+        "stage": "RETREAT",
+        "kind": "joint limit",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.06371793628059028,
+          -0.21932605212322828,
+          0.021611053571207895,
+          2.9670597283903604,
+          -0.15842311685131177,
+          1.2492678151304393
+        ],
+        "tiltDeg": 0,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true,
+      "success": false
+    },
+    {
+      "i": 37,
+      "book": {
+        "x": 0.6375849954690784,
+        "y": -0.06656101263128221
+      },
+      "bookYawDeg": 151,
+      "destination": {
+        "x": 0.794234748929739,
+        "y": -0.024867420839145782
+      },
+      "destinationYawDeg": 117,
+      "reason": "joint limit at PRE-PLACE",
+      "structuredFailure": {
+        "stage": "PRE-PLACE",
+        "kind": "IK non-convergence",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.12703708355379106,
+          -0.09643786282320482,
+          -0.06503733297835573,
+          1.0895773330455576,
+          0.5249367575025735,
+          1.447089593773591
+        ],
+        "tiltDeg": 29.999999999999996,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true,
+      "success": false
+    },
+    {
+      "i": 38,
+      "book": {
+        "x": 0.6545819205790757,
+        "y": -0.027285295920446515
+      },
+      "bookYawDeg": 93,
+      "destination": {
+        "x": 0.7998055665101855,
+        "y": -0.05714207208715379
+      },
+      "destinationYawDeg": 140,
+      "reason": "joint limit at PRE-PLACE",
+      "structuredFailure": {
+        "stage": "PRE-PLACE",
+        "kind": "IK non-convergence",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.1324468674138639,
+          -0.17183612451850272,
+          0.07541852640456317,
+          0.9565389262735269,
+          0.36764951916666605,
+          1.1691687692749442
+        ],
+        "tiltDeg": 29.999999999999996,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true,
+      "success": false
+    },
+    {
+      "i": 39,
+      "book": {
+        "x": 0.7863101531937718,
+        "y": -0.05293648597784341
+      },
+      "bookYawDeg": 126,
+      "destination": {
+        "x": 0.6129152521211654,
+        "y": -0.01041170964948833
+      },
+      "destinationYawDeg": 171,
+      "reason": "joint limit at RETREAT",
+      "structuredFailure": {
+        "stage": "RETREAT",
+        "kind": "orientation limit",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.016985559264152236,
+          0.3307466811925153,
+          -1.3100589390638104,
+          0,
+          0.9793122578712952,
+          1.7108904002102343
+        ],
+        "tiltDeg": 0,
+        "ikSeedUsed": 9
+      },
+      "validOverlays": true,
+      "plannerBug": true,
+      "success": false
+    },
+    {
+      "i": 40,
+      "book": {
+        "x": 0.7939106017816812,
+        "y": -0.007827197862789036
+      },
+      "bookYawDeg": 177,
+      "destination": {
+        "x": 0.6316503691021352,
+        "y": -0.051239504395052794
+      },
+      "destinationYawDeg": 89,
+      "reason": "link-vs-base collision at PLACE",
+      "structuredFailure": {
+        "stage": "PLACE",
+        "kind": "link-vs-base collision",
+        "linkName": "upper-arm",
+        "otherPrimitive": "pedestal-column-cylinder (center=(0,0,z=590 mm); radius=95 mm; height=620 mm; z=280–900 mm)",
+        "penetrationMm": 17.525200820350168,
+        "sampleZMm": 892.5347293727136,
+        "jointAngles": [
+          -0.08094280537165861,
+          0.6201590356590401,
+          -1.3167723418571877,
+          0,
+          0.6966133061981477,
+          3.0781031407380777
+        ],
+        "tiltDeg": 0,
+        "ikSeedUsed": 9
+      },
+      "validOverlays": true,
+      "plannerBug": true,
+      "success": false
+    },
+    {
+      "i": 41,
+      "book": {
+        "x": 0.6333763810433447,
+        "y": -0.057106303432956335
+      },
+      "bookYawDeg": 100,
+      "destination": {
+        "x": 0.7841053332202136,
+        "y": -0.0635050077084452
+      },
+      "destinationYawDeg": 130,
+      "reason": "joint limit at RETREAT",
+      "structuredFailure": {
+        "stage": "RETREAT",
+        "kind": "joint limit",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.07856219933948742,
+          -0.23183030987181477,
+          0.04674517590108886,
+          2.9670597283903604,
+          -0.16538542108314624,
+          -0.6711252759849734
+        ],
+        "tiltDeg": 0,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true,
+      "success": false
+    },
+    {
+      "i": 42,
+      "book": {
+        "x": 0.6467190392315387,
+        "y": -0.028800007151439787
+      },
+      "bookYawDeg": 67,
+      "destination": {
+        "x": 0.7992822590656579,
+        "y": -0.044391544172540306
+      },
+      "destinationYawDeg": 33,
+      "reason": "joint limit at PLACE",
+      "structuredFailure": {
+        "stage": "PLACE",
+        "kind": "orientation limit",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.05605225054986414,
+          0.007875396208577804,
+          0.01670711980755906,
+          2.9670597283903604,
+          0.027206302236519476,
+          1.107359276754549
+        ],
+        "tiltDeg": 0,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true,
+      "success": false
+    },
+    {
+      "i": 43,
+      "book": {
+        "x": 0.7966507275309413,
+        "y": -0.06205497003160417
+      },
+      "bookYawDeg": 101,
+      "destination": {
+        "x": 0.634866070523858,
+        "y": -0.05394009669311345
+      },
+      "destinationYawDeg": 170,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null,
+      "success": false
+    },
+    {
+      "i": 44,
+      "book": {
+        "x": 0.8010883260611444,
+        "y": -0.06576468396000565
+      },
+      "bookYawDeg": 97,
+      "destination": {
+        "x": 0.6305745624378323,
+        "y": -0.008350033136084678
+      },
+      "destinationYawDeg": 180,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null,
+      "success": false
+    },
+    {
+      "i": 45,
+      "book": {
+        "x": 0.7865918249543756,
+        "y": -0.059002768909558655
+      },
+      "bookYawDeg": 98,
+      "destination": {
+        "x": 0.6175298904348164,
+        "y": -0.06874169196002186
+      },
+      "destinationYawDeg": 9,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null,
+      "success": false
+    },
+    {
+      "i": 46,
+      "book": {
+        "x": 0.7502966472227126,
+        "y": -0.04177559028379619
+      },
+      "bookYawDeg": 74,
+      "destination": {
+        "x": 0.6029433514177799,
+        "y": -0.021010711239650846
+      },
+      "destinationYawDeg": 88,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null,
+      "success": false
+    },
+    {
+      "i": 47,
+      "book": {
+        "x": 0.6470632260292768,
+        "y": -0.024370886581018568
+      },
+      "bookYawDeg": 84,
+      "destination": {
+        "x": 0.7956298676598816,
+        "y": -0.01898254389874637
+      },
+      "destinationYawDeg": 159,
+      "reason": "joint limit at PRE-PLACE",
+      "structuredFailure": {
+        "stage": "PRE-PLACE",
+        "kind": "joint limit",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.04963944407865302,
+          0.04646187939584481,
+          -0.06607657167523656,
+          2.9670597283903604,
+          -0.6255979767860713,
+          -1.4529724469560734
+        ],
+        "tiltDeg": 29.999999999999996,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true,
+      "success": false
+    },
+    {
+      "i": 48,
+      "book": {
+        "x": 0.6519048689119518,
+        "y": -0.015183072173967957
+      },
+      "bookYawDeg": 25,
+      "destination": {
+        "x": 0.8024520022701471,
+        "y": -0.046269513210281735
+      },
+      "destinationYawDeg": 116,
+      "reason": "joint limit at PRE-PLACE",
+      "structuredFailure": {
+        "stage": "PRE-PLACE",
+        "kind": "IK non-convergence",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.1524053033435917,
+          -0.10241401042816384,
+          -0.06199684403493136,
+          1.21528021677481,
+          0.5072225277569088,
+          1.3754306696670673
+        ],
+        "tiltDeg": 29.999999999999996,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true,
+      "success": false
+    },
+    {
+      "i": 49,
+      "book": {
+        "x": 0.8017975196894258,
+        "y": -0.07133873394690454
+      },
+      "bookYawDeg": 168,
+      "destination": {
+        "x": 0.643853640537709,
+        "y": -0.033365211272612216
+      },
+      "destinationYawDeg": 130,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null,
+      "success": false
+    }
+  ],
+  "successes": 0,
+  "failures": [
+    {
+      "i": 0,
+      "book": {
+        "x": 0.6255834113527089,
+        "y": -0.005855894936248662
+      },
+      "bookYawDeg": 2,
+      "destination": {
+        "x": 0.7939363107271492,
+        "y": -0.03536693007685244
+      },
+      "destinationYawDeg": 132,
+      "reason": "joint limit at PRE-PLACE",
+      "structuredFailure": {
+        "stage": "PRE-PLACE",
+        "kind": "IK non-convergence",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.11950950516313116,
+          -0.19234007409409348,
+          0.06724905591521829,
+          1.0895773330455576,
+          0.38247274312585666,
+          1.185348370419994
+        ],
+        "tiltDeg": 29.999999999999996,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true
+    },
+    {
+      "i": 1,
+      "book": {
+        "x": 0.7634895429387688,
+        "y": -0.050751020582392815
+      },
+      "bookYawDeg": 7,
+      "destination": {
+        "x": 0.6170427698735147,
+        "y": -0.024243045328184963
+      },
+      "destinationYawDeg": 35,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null
+    },
+    {
+      "i": 2,
+      "book": {
+        "x": 0.6591827075276524,
+        "y": -0.0479349550884217
+      },
+      "bookYawDeg": 173,
+      "destination": {
+        "x": 0.806449639191851,
+        "y": -0.030624160831794145
+      },
+      "destinationYawDeg": 125,
+      "reason": "joint limit at PRE-PLACE",
+      "structuredFailure": {
+        "stage": "PRE-PLACE",
+        "kind": "IK non-convergence",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.12465601490892181,
+          -0.09183359761918858,
+          -0.06607657167523656,
+          1.2437385631804747,
+          0.4672291067655653,
+          1.274977906787519
+        ],
+        "tiltDeg": 29.999999999999996,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true
+    },
+    {
+      "i": 3,
+      "book": {
+        "x": 0.7834433663077652,
+        "y": -0.016725562522187827
+      },
+      "bookYawDeg": 59,
+      "destination": {
+        "x": 0.6349578132759779,
+        "y": -0.025643348237499593
+      },
+      "destinationYawDeg": 49,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null
+    },
+    {
+      "i": 4,
+      "book": {
+        "x": 0.6293363159149885,
+        "y": -0.015581466453149916
+      },
+      "bookYawDeg": 138,
+      "destination": {
+        "x": 0.8002866284549236,
+        "y": -0.03382821028120816
+      },
+      "destinationYawDeg": 133,
+      "reason": "joint limit at PRE-PLACE",
+      "structuredFailure": {
+        "stage": "PRE-PLACE",
+        "kind": "IK non-convergence",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.12007868976604998,
+          -0.06380821482664159,
+          -0.04747111655662348,
+          1.056550759295375,
+          0.4663154087591148,
+          1.2313297784987214
+        ],
+        "tiltDeg": 29.999999999999996,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true
+    },
+    {
+      "i": 5,
+      "book": {
+        "x": 0.7709007960371673,
+        "y": -0.05306654312647879
+      },
+      "bookYawDeg": 41,
+      "destination": {
+        "x": 0.6211102242488413,
+        "y": -0.048070050878450274
+      },
+      "destinationYawDeg": 50,
+      "reason": "joint limit at RETREAT",
+      "structuredFailure": {
+        "stage": "RETREAT",
+        "kind": "orientation limit",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.07723978114430755,
+          0.31703429259780397,
+          -1.2697752019327935,
+          0,
+          0.9527409093349897,
+          3.7624845732432175
+        ],
+        "tiltDeg": 0,
+        "ikSeedUsed": 9
+      },
+      "validOverlays": true,
+      "plannerBug": true
+    },
+    {
+      "i": 6,
+      "book": {
+        "x": 0.6456099040806293,
+        "y": -0.018910046862438322
+      },
+      "bookYawDeg": 131,
+      "destination": {
+        "x": 0.8035123049747198,
+        "y": -0.06958755507133901
+      },
+      "destinationYawDeg": 14,
+      "reason": "joint limit at PLACE",
+      "structuredFailure": {
+        "stage": "PLACE",
+        "kind": "joint limit",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.08716231994075196,
+          0.020505564875404895,
+          -0.010671589980655155,
+          2.9670597283903604,
+          0.03686840982343735,
+          1.4084148608349476
+        ],
+        "tiltDeg": 0,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true
+    },
+    {
+      "i": 7,
+      "book": {
+        "x": 0.6284896056074649,
+        "y": -0.057037131590768696
+      },
+      "bookYawDeg": 110,
+      "destination": {
+        "x": 0.7826802003756165,
+        "y": -0.057180391820147634
+      },
+      "destinationYawDeg": 49,
+      "reason": "joint limit at RETREAT",
+      "structuredFailure": {
+        "stage": "RETREAT",
+        "kind": "joint limit",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.07070128899544843,
+          -0.24434839374723769,
+          0.07306995792412307,
+          2.9670597283903604,
+          -0.15801592127395145,
+          0.7541459209830143
+        ],
+        "tiltDeg": 0,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true
+    },
+    {
+      "i": 8,
+      "book": {
+        "x": 0.7679604308493435,
+        "y": -0.05975140334106982
+      },
+      "bookYawDeg": 140,
+      "destination": {
+        "x": 0.6174273711442947,
+        "y": -0.04869584237225354
+      },
+      "destinationYawDeg": 165,
+      "reason": "link-vs-base collision at PLACE",
+      "structuredFailure": {
+        "stage": "PLACE",
+        "kind": "link-vs-base collision",
+        "linkName": "upper-arm",
+        "otherPrimitive": "pedestal-column-cylinder (center=(0,0,z=590 mm); radius=95 mm; height=620 mm; z=280–900 mm)",
+        "penetrationMm": 19.836649444542566,
+        "sampleZMm": 889.3853257839204,
+        "jointAngles": [
+          -0.078706018014431,
+          0.6461172515754537,
+          -1.3748750048610872,
+          0,
+          0.7287577532856335,
+          -4.529295610599971
+        ],
+        "tiltDeg": 0,
+        "ikSeedUsed": 9
+      },
+      "validOverlays": true,
+      "plannerBug": true
+    },
+    {
+      "i": 9,
+      "book": {
+        "x": 0.6292484855279326,
+        "y": -0.013155004205182196
+      },
+      "bookYawDeg": 90,
+      "destination": {
+        "x": 0.8090217096172273,
+        "y": -0.03325663172639906
+      },
+      "destinationYawDeg": 7,
+      "reason": "joint limit at PLACE",
+      "structuredFailure": {
+        "stage": "PLACE",
+        "kind": "joint limit",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.04211323570032204,
+          0.020021225382088573,
+          -0.009604437845982673,
+          2.9670597283903604,
+          0.05042147536315532,
+          1.5713188690715825
+        ],
+        "tiltDeg": 0,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true
+    },
+    {
+      "i": 10,
+      "book": {
+        "x": 0.6175266433507204,
+        "y": -0.048066783146932725
+      },
+      "bookYawDeg": 47,
+      "destination": {
+        "x": 0.7840040328726172,
+        "y": -0.04995270353741944
+      },
+      "destinationYawDeg": 131,
+      "reason": "joint limit at RETREAT",
+      "structuredFailure": {
+        "stage": "RETREAT",
+        "kind": "joint limit",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.06138647748473149,
+          -0.23793805146958621,
+          0.059539006082896466,
+          2.9670597283903604,
+          -0.1624996734360537,
+          -0.6700027851738157
+        ],
+        "tiltDeg": 0,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true
+    },
+    {
+      "i": 11,
+      "book": {
+        "x": 0.7703850539866834,
+        "y": -0.03279394405893982
+      },
+      "bookYawDeg": 21,
+      "destination": {
+        "x": 0.6214634072221815,
+        "y": -0.03519434557296336
+      },
+      "destinationYawDeg": 158,
+      "reason": "link-vs-base collision at PLACE",
+      "structuredFailure": {
+        "stage": "PLACE",
+        "kind": "link-vs-base collision",
+        "linkName": "upper-arm",
+        "otherPrimitive": "pedestal-column-cylinder (center=(0,0,z=590 mm); radius=95 mm; height=620 mm; z=280–900 mm)",
+        "penetrationMm": 19.337169985763737,
+        "sampleZMm": 890.0515066665621,
+        "jointAngles": [
+          -0.05657097953310025,
+          0.6405848033851406,
+          -1.3624678353388409,
+          0,
+          0.7218830319537002,
+          1.8981977827005492
+        ],
+        "tiltDeg": 0,
+        "ikSeedUsed": 9
+      },
+      "validOverlays": true,
+      "plannerBug": true
+    },
+    {
+      "i": 12,
+      "book": {
+        "x": 0.6574585180636495,
+        "y": -0.05762176058255136
+      },
+      "bookYawDeg": 71,
+      "destination": {
+        "x": 0.8077548658289015,
+        "y": -0.04099590406753123
+      },
+      "destinationYawDeg": 120,
+      "reason": "joint limit at PRE-PLACE",
+      "structuredFailure": {
+        "stage": "PRE-PLACE",
+        "kind": "IK non-convergence",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.14152659799834802,
+          -0.08670692081980402,
+          -0.06607657167523656,
+          1.2703278435113439,
+          0.4819045329005041,
+          1.3042927454364877
+        ],
+        "tiltDeg": 29.999999999999996,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true
+    },
+    {
+      "i": 13,
+      "book": {
+        "x": 0.7877918846346438,
+        "y": -0.04174435810185969
+      },
+      "bookYawDeg": 36,
+      "destination": {
+        "x": 0.6049970156606286,
+        "y": -0.011908459579572081
+      },
+      "destinationYawDeg": 92,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null
+    },
+    {
+      "i": 14,
+      "book": {
+        "x": 0.6387966765090822,
+        "y": -0.07045329940505327
+      },
+      "bookYawDeg": 16,
+      "destination": {
+        "x": 0.7939340585563331,
+        "y": -0.04054024043492973
+      },
+      "destinationYawDeg": 63,
+      "reason": "joint limit at RETREAT",
+      "structuredFailure": {
+        "stage": "RETREAT",
+        "kind": "joint limit",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.048836662770770395,
+          -0.2160431289991757,
+          0.01574286855865484,
+          2.9670597283903604,
+          -0.14832412350203414,
+          0.536817919080948
+        ],
+        "tiltDeg": 0,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true
+    },
+    {
+      "i": 15,
+      "book": {
+        "x": 0.7799763764534146,
+        "y": -0.05865927609615028
+      },
+      "bookYawDeg": 93,
+      "destination": {
+        "x": 0.6290605485625564,
+        "y": -0.028318117568269373
+      },
+      "destinationYawDeg": 44,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null
+    },
+    {
+      "i": 16,
+      "book": {
+        "x": 0.7628677688445895,
+        "y": -0.04988285220228136
+      },
+      "bookYawDeg": 119,
+      "destination": {
+        "x": 0.6171794287487864,
+        "y": -0.01711695027537644
+      },
+      "destinationYawDeg": 43,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null
+    },
+    {
+      "i": 17,
+      "book": {
+        "x": 0.6347496734280139,
+        "y": -0.022102426094934343
+      },
+      "bookYawDeg": 140,
+      "destination": {
+        "x": 0.801146186189726,
+        "y": -0.01304084445349872
+      },
+      "destinationYawDeg": 78,
+      "reason": "joint limit at PLACE",
+      "structuredFailure": {
+        "stage": "PLACE",
+        "kind": "orientation limit",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.016752096666904047,
+          0.014434560441704632,
+          0.002514666262329806,
+          2.9670597283903604,
+          0.02249116812205668,
+          0.3627293037781054
+        ],
+        "tiltDeg": 0,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true
+    },
+    {
+      "i": 18,
+      "book": {
+        "x": 0.6355716233141719,
+        "y": -0.024376392373815177
+      },
+      "bookYawDeg": 122,
+      "destination": {
+        "x": 0.7784529813565313,
+        "y": -0.06408494637347759
+      },
+      "destinationYawDeg": 26,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null
+    },
+    {
+      "i": 19,
+      "book": {
+        "x": 0.6271284084487706,
+        "y": -0.049213940752670174
+      },
+      "bookYawDeg": 137,
+      "destination": {
+        "x": 0.7890154134389012,
+        "y": -0.04510735413990915
+      },
+      "destinationYawDeg": 92,
+      "reason": "joint limit at RETREAT",
+      "structuredFailure": {
+        "stage": "RETREAT",
+        "kind": "joint limit",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.05486598266730001,
+          -0.22149326649437828,
+          0.0257494526225528,
+          2.9670597283903604,
+          -0.16216047971366243,
+          0.017841469870253143
+        ],
+        "tiltDeg": 0,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true
+    },
+    {
+      "i": 20,
+      "book": {
+        "x": 0.6717914138827472,
+        "y": -0.05561394664458931
+      },
+      "bookYawDeg": 25,
+      "destination": {
+        "x": 0.8181712597142905,
+        "y": -0.012741741081699728
+      },
+      "destinationYawDeg": 99,
+      "reason": "Destination out of reach on Table at this height at PRE-PLACE",
+      "structuredFailure": {
+        "stage": "PRE-PLACE",
+        "kind": "IK non-convergence",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.12084652768927615,
+          -0.0939453697463329,
+          -0.06554323226820533,
+          1.3911051793251856,
+          0.5282772666607892,
+          1.4559245871104982
+        ],
+        "tiltDeg": 29.999999999999996,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true
+    },
+    {
+      "i": 21,
+      "book": {
+        "x": 0.6521975638810544,
+        "y": -0.028069280562922357
+      },
+      "bookYawDeg": 0,
+      "destination": {
+        "x": 0.8002557657193392,
+        "y": -0.05253112121485174
+      },
+      "destinationYawDeg": 37,
+      "reason": "joint limit at PLACE",
+      "structuredFailure": {
+        "stage": "PLACE",
+        "kind": "joint limit",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.06589550761007264,
+          0.02253746168666927,
+          -0.015010564334179627,
+          2.9670597283903604,
+          0.01607580314668118,
+          1.032595475005456
+        ],
+        "tiltDeg": 0,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true
+    },
+    {
+      "i": 22,
+      "book": {
+        "x": 0.7658870095666498,
+        "y": -0.013610565578565
+      },
+      "bookYawDeg": 165,
+      "destination": {
+        "x": 0.6166883730236441,
+        "y": -0.025664534149691463
+      },
+      "destinationYawDeg": 145,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null
+    },
+    {
+      "i": 23,
+      "book": {
+        "x": 0.6039769203402101,
+        "y": -0.020239765206351876
+      },
+      "bookYawDeg": 80,
+      "destination": {
+        "x": 0.7786609695293009,
+        "y": -0.016135958591476082
+      },
+      "destinationYawDeg": 143,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null
+    },
+    {
+      "i": 24,
+      "book": {
+        "x": 0.622272494006902,
+        "y": -0.03214708865620196
+      },
+      "bookYawDeg": 36,
+      "destination": {
+        "x": 0.7981621032394468,
+        "y": -0.025201322892680764
+      },
+      "destinationYawDeg": 115,
+      "reason": "joint limit at PRE-PLACE",
+      "structuredFailure": {
+        "stage": "PRE-PLACE",
+        "kind": "IK non-convergence",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.1286174869486814,
+          -0.08849712100154393,
+          -0.06546487159325232,
+          1.1115836974296236,
+          0.5266635955696908,
+          1.4531603268635511
+        ],
+        "tiltDeg": 29.999999999999996,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true
+    },
+    {
+      "i": 25,
+      "book": {
+        "x": 0.8087639482319354,
+        "y": -0.01576830987818539
+      },
+      "bookYawDeg": 104,
+      "destination": {
+        "x": 0.6349539403337985,
+        "y": -0.017766337199136614
+      },
+      "destinationYawDeg": 27,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null
+    },
+    {
+      "i": 26,
+      "book": {
+        "x": 0.7595405712723732,
+        "y": -0.016670436607673762
+      },
+      "bookYawDeg": 31,
+      "destination": {
+        "x": 0.6094457977823913,
+        "y": -0.06540185549296439
+      },
+      "destinationYawDeg": 12,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null
+    },
+    {
+      "i": 27,
+      "book": {
+        "x": 0.8106938168592751,
+        "y": -0.0189583554957062
+      },
+      "bookYawDeg": 111,
+      "destination": {
+        "x": 0.6412678457237779,
+        "y": -0.06872559861280024
+      },
+      "destinationYawDeg": 4,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null
+    },
+    {
+      "i": 28,
+      "book": {
+        "x": 0.7671485003922134,
+        "y": -0.04713031771592796
+      },
+      "bookYawDeg": 63,
+      "destination": {
+        "x": 0.617209626045078,
+        "y": -0.04996717982925475
+      },
+      "destinationYawDeg": 161,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null
+    },
+    {
+      "i": 29,
+      "book": {
+        "x": 0.6270959285832941,
+        "y": -0.051301047960296275
+      },
+      "bookYawDeg": 115,
+      "destination": {
+        "x": 0.785751327946782,
+        "y": -0.01681545396335423
+      },
+      "destinationYawDeg": 45,
+      "reason": "joint limit at RETREAT",
+      "structuredFailure": {
+        "stage": "RETREAT",
+        "kind": "joint limit",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.019150765094717092,
+          -0.23578084378711253,
+          0.055005180011559025,
+          2.9670597283903604,
+          -0.1637221455192859,
+          0.872529546262964
+        ],
+        "tiltDeg": 0,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true
+    },
+    {
+      "i": 30,
+      "book": {
+        "x": 0.6114359557162969,
+        "y": -0.03738130583427846
+      },
+      "bookYawDeg": 3,
+      "destination": {
+        "x": 0.7607132258731871,
+        "y": -0.032611954314634206
+      },
+      "destinationYawDeg": 104,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null
+    },
+    {
+      "i": 31,
+      "book": {
+        "x": 0.7914641125593334,
+        "y": -0.04457592043094337
+      },
+      "bookYawDeg": 121,
+      "destination": {
+        "x": 0.6401211505383253,
+        "y": -0.035080637233331796
+      },
+      "destinationYawDeg": 121,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null
+    },
+    {
+      "i": 32,
+      "book": {
+        "x": 0.7933633250650018,
+        "y": -0.06416651002131403
+      },
+      "bookYawDeg": 135,
+      "destination": {
+        "x": 0.6449866534490138,
+        "y": -0.06376745264045894
+      },
+      "destinationYawDeg": 52,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null
+    },
+    {
+      "i": 33,
+      "book": {
+        "x": 0.7705169817991554,
+        "y": -0.05800449998117983
+      },
+      "bookYawDeg": 25,
+      "destination": {
+        "x": 0.6245561606995761,
+        "y": -0.020204957211390137
+      },
+      "destinationYawDeg": 37,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null
+    },
+    {
+      "i": 34,
+      "book": {
+        "x": 0.8091634576860816,
+        "y": -0.04313644963316619
+      },
+      "bookYawDeg": 82,
+      "destination": {
+        "x": 0.645687916111201,
+        "y": -0.03480699547566474
+      },
+      "destinationYawDeg": 122,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null
+    },
+    {
+      "i": 35,
+      "book": {
+        "x": 0.6323530546296388,
+        "y": -0.029105582190677524
+      },
+      "bookYawDeg": 29,
+      "destination": {
+        "x": 0.7933298474363982,
+        "y": -0.043195775533095004
+      },
+      "destinationYawDeg": 177,
+      "reason": "joint limit at PRE-PLACE",
+      "structuredFailure": {
+        "stage": "PRE-PLACE",
+        "kind": "joint limit",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.0492777742520218,
+          0.08107932139890578,
+          -0.06607657167523656,
+          2.9670597283903604,
+          -0.7340307466495908,
+          -1.5474251390780995
+        ],
+        "tiltDeg": 29.999999999999996,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true
+    },
+    {
+      "i": 36,
+      "book": {
+        "x": 0.6425573925022036,
+        "y": -0.031754211066290734
+      },
+      "bookYawDeg": 89,
+      "destination": {
+        "x": 0.7900373313948512,
+        "y": -0.052174632074311375
+      },
+      "destinationYawDeg": 21,
+      "reason": "joint limit at RETREAT",
+      "structuredFailure": {
+        "stage": "RETREAT",
+        "kind": "joint limit",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.06371793628059028,
+          -0.21932605212322828,
+          0.021611053571207895,
+          2.9670597283903604,
+          -0.15842311685131177,
+          1.2492678151304393
+        ],
+        "tiltDeg": 0,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true
+    },
+    {
+      "i": 37,
+      "book": {
+        "x": 0.6375849954690784,
+        "y": -0.06656101263128221
+      },
+      "bookYawDeg": 151,
+      "destination": {
+        "x": 0.794234748929739,
+        "y": -0.024867420839145782
+      },
+      "destinationYawDeg": 117,
+      "reason": "joint limit at PRE-PLACE",
+      "structuredFailure": {
+        "stage": "PRE-PLACE",
+        "kind": "IK non-convergence",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.12703708355379106,
+          -0.09643786282320482,
+          -0.06503733297835573,
+          1.0895773330455576,
+          0.5249367575025735,
+          1.447089593773591
+        ],
+        "tiltDeg": 29.999999999999996,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true
+    },
+    {
+      "i": 38,
+      "book": {
+        "x": 0.6545819205790757,
+        "y": -0.027285295920446515
+      },
+      "bookYawDeg": 93,
+      "destination": {
+        "x": 0.7998055665101855,
+        "y": -0.05714207208715379
+      },
+      "destinationYawDeg": 140,
+      "reason": "joint limit at PRE-PLACE",
+      "structuredFailure": {
+        "stage": "PRE-PLACE",
+        "kind": "IK non-convergence",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.1324468674138639,
+          -0.17183612451850272,
+          0.07541852640456317,
+          0.9565389262735269,
+          0.36764951916666605,
+          1.1691687692749442
+        ],
+        "tiltDeg": 29.999999999999996,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true
+    },
+    {
+      "i": 39,
+      "book": {
+        "x": 0.7863101531937718,
+        "y": -0.05293648597784341
+      },
+      "bookYawDeg": 126,
+      "destination": {
+        "x": 0.6129152521211654,
+        "y": -0.01041170964948833
+      },
+      "destinationYawDeg": 171,
+      "reason": "joint limit at RETREAT",
+      "structuredFailure": {
+        "stage": "RETREAT",
+        "kind": "orientation limit",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.016985559264152236,
+          0.3307466811925153,
+          -1.3100589390638104,
+          0,
+          0.9793122578712952,
+          1.7108904002102343
+        ],
+        "tiltDeg": 0,
+        "ikSeedUsed": 9
+      },
+      "validOverlays": true,
+      "plannerBug": true
+    },
+    {
+      "i": 40,
+      "book": {
+        "x": 0.7939106017816812,
+        "y": -0.007827197862789036
+      },
+      "bookYawDeg": 177,
+      "destination": {
+        "x": 0.6316503691021352,
+        "y": -0.051239504395052794
+      },
+      "destinationYawDeg": 89,
+      "reason": "link-vs-base collision at PLACE",
+      "structuredFailure": {
+        "stage": "PLACE",
+        "kind": "link-vs-base collision",
+        "linkName": "upper-arm",
+        "otherPrimitive": "pedestal-column-cylinder (center=(0,0,z=590 mm); radius=95 mm; height=620 mm; z=280–900 mm)",
+        "penetrationMm": 17.525200820350168,
+        "sampleZMm": 892.5347293727136,
+        "jointAngles": [
+          -0.08094280537165861,
+          0.6201590356590401,
+          -1.3167723418571877,
+          0,
+          0.6966133061981477,
+          3.0781031407380777
+        ],
+        "tiltDeg": 0,
+        "ikSeedUsed": 9
+      },
+      "validOverlays": true,
+      "plannerBug": true
+    },
+    {
+      "i": 41,
+      "book": {
+        "x": 0.6333763810433447,
+        "y": -0.057106303432956335
+      },
+      "bookYawDeg": 100,
+      "destination": {
+        "x": 0.7841053332202136,
+        "y": -0.0635050077084452
+      },
+      "destinationYawDeg": 130,
+      "reason": "joint limit at RETREAT",
+      "structuredFailure": {
+        "stage": "RETREAT",
+        "kind": "joint limit",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.07856219933948742,
+          -0.23183030987181477,
+          0.04674517590108886,
+          2.9670597283903604,
+          -0.16538542108314624,
+          -0.6711252759849734
+        ],
+        "tiltDeg": 0,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true
+    },
+    {
+      "i": 42,
+      "book": {
+        "x": 0.6467190392315387,
+        "y": -0.028800007151439787
+      },
+      "bookYawDeg": 67,
+      "destination": {
+        "x": 0.7992822590656579,
+        "y": -0.044391544172540306
+      },
+      "destinationYawDeg": 33,
+      "reason": "joint limit at PLACE",
+      "structuredFailure": {
+        "stage": "PLACE",
+        "kind": "orientation limit",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.05605225054986414,
+          0.007875396208577804,
+          0.01670711980755906,
+          2.9670597283903604,
+          0.027206302236519476,
+          1.107359276754549
+        ],
+        "tiltDeg": 0,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true
+    },
+    {
+      "i": 43,
+      "book": {
+        "x": 0.7966507275309413,
+        "y": -0.06205497003160417
+      },
+      "bookYawDeg": 101,
+      "destination": {
+        "x": 0.634866070523858,
+        "y": -0.05394009669311345
+      },
+      "destinationYawDeg": 170,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null
+    },
+    {
+      "i": 44,
+      "book": {
+        "x": 0.8010883260611444,
+        "y": -0.06576468396000565
+      },
+      "bookYawDeg": 97,
+      "destination": {
+        "x": 0.6305745624378323,
+        "y": -0.008350033136084678
+      },
+      "destinationYawDeg": 180,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null
+    },
+    {
+      "i": 45,
+      "book": {
+        "x": 0.7865918249543756,
+        "y": -0.059002768909558655
+      },
+      "bookYawDeg": 98,
+      "destination": {
+        "x": 0.6175298904348164,
+        "y": -0.06874169196002186
+      },
+      "destinationYawDeg": 9,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null
+    },
+    {
+      "i": 46,
+      "book": {
+        "x": 0.7502966472227126,
+        "y": -0.04177559028379619
+      },
+      "bookYawDeg": 74,
+      "destination": {
+        "x": 0.6029433514177799,
+        "y": -0.021010711239650846
+      },
+      "destinationYawDeg": 88,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null
+    },
+    {
+      "i": 47,
+      "book": {
+        "x": 0.6470632260292768,
+        "y": -0.024370886581018568
+      },
+      "bookYawDeg": 84,
+      "destination": {
+        "x": 0.7956298676598816,
+        "y": -0.01898254389874637
+      },
+      "destinationYawDeg": 159,
+      "reason": "joint limit at PRE-PLACE",
+      "structuredFailure": {
+        "stage": "PRE-PLACE",
+        "kind": "joint limit",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.04963944407865302,
+          0.04646187939584481,
+          -0.06607657167523656,
+          2.9670597283903604,
+          -0.6255979767860713,
+          -1.4529724469560734
+        ],
+        "tiltDeg": 29.999999999999996,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true
+    },
+    {
+      "i": 48,
+      "book": {
+        "x": 0.6519048689119518,
+        "y": -0.015183072173967957
+      },
+      "bookYawDeg": 25,
+      "destination": {
+        "x": 0.8024520022701471,
+        "y": -0.046269513210281735
+      },
+      "destinationYawDeg": 116,
+      "reason": "joint limit at PRE-PLACE",
+      "structuredFailure": {
+        "stage": "PRE-PLACE",
+        "kind": "IK non-convergence",
+        "linkName": null,
+        "otherPrimitive": null,
+        "penetrationMm": null,
+        "jointAngles": [
+          -0.1524053033435917,
+          -0.10241401042816384,
+          -0.06199684403493136,
+          1.21528021677481,
+          0.5072225277569088,
+          1.3754306696670673
+        ],
+        "tiltDeg": 29.999999999999996,
+        "ikSeedUsed": 5
+      },
+      "validOverlays": true,
+      "plannerBug": true
+    },
+    {
+      "i": 49,
+      "book": {
+        "x": 0.8017975196894258,
+        "y": -0.07133873394690454
+      },
+      "bookYawDeg": 168,
+      "destination": {
+        "x": 0.643853640537709,
+        "y": -0.033365211272612216
+      },
+      "destinationYawDeg": 130,
+      "reason": "Tray wall blocks placement on Table",
+      "validOverlays": true,
+      "plannerBug": false,
+      "lowestZM": 0.815,
+      "finalXYErrorM": null,
+      "finalYawErrorDeg": null
+    }
+  ]
+}

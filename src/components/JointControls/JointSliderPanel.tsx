@@ -1,14 +1,14 @@
 'use client';
 
 import React from 'react';
-import { useSimulationStore } from '../../store/simulationStore';
+import { useThrottledSimulationSelector } from '../../store/useThrottledSimulationSelector';
 import { PUMA_GEOMETRY } from '../../robot/robotConfig';
 import { radToDeg } from '../../robotics/transforms';
 
 const names = ['Base', 'Shoulder', 'Elbow', 'Wrist 1', 'Wrist 2', 'Wrist 3'];
 
 export const JointSliderPanel: React.FC = () => {
-  const { jointAngles, setJointAngleDegrees, resetToHome } = useSimulationStore();
+  const { jointAngles, setJointAngleDegrees, resetToHome } = useThrottledSimulationSelector((s) => ({ jointAngles:s.jointAngles,setJointAngleDegrees:s.setJointAngleDegrees,resetToHome:s.resetToHome }));
 
   return (
     <section className="control-panel">

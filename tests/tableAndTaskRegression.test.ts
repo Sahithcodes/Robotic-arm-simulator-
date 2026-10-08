@@ -56,6 +56,13 @@ describe('table presets and task regressions', () => {
     expect(pick.reachable).toBe(true);
   });
 
+  it('reuses the exact measured Large HOME default returned by the full picker search', () => {
+    const store=useSimulationStore.getState();store.setTablePreset('large');
+    const cached=useSimulationStore.getState().simulatedObject.position;
+    const searched=findDefaultPickPosition(useSimulationStore.getState().dhTable,HOME_JOINT_ANGLES,0);
+    expect(cached).toEqual(searched);
+  });
+
   it('completes and places the Predefined Task on Compact and Large presets without a destination', () => {
     for(const preset of ['compact','large'] as const){
       const store=useSimulationStore.getState();store.setTablePreset(preset);store.resetTask();
