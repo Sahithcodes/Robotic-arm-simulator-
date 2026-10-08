@@ -111,20 +111,20 @@ const defaultAngles = HOME_JOINT_ANGLES;
 const initialFK = computeForwardKinematics(INITIAL_DH_TABLE, defaultAngles);
 const initialTaskWaypoints = buildTask5JointWaypoints(INITIAL_DH_TABLE);
 const initialPickability = validatePickApproach(INITIAL_DH_TABLE, BOOK.initialPosition, defaultAngles, Math.PI / 2);
-const GRASP_TOLERANCE = 0.035;
+const GRASP_TOLERANCE = 0.005;
 const END_EFFECTOR_TOLERANCE = 0.018;
 const AUTONOMOUS_SEGMENT_SECONDS = 1.5;
 // These are the exact results of findDefaultPickPosition for the fixed DH table at HOME.
 // Reusing those measured results avoids a synchronous planner search during preset changes.
 const HOME_DEFAULT_POSES = {
   compact: { x: 0.8150000000000002, y: -0.08500000000000002, z: BOOK.initialPosition.z },
-  large: { x: 0.8350000000000004, y: 0.14500000000000002, z: BOOK.initialPosition.z },
+  large: { x: 0.8350000000000004, y: -0.14499999999999996, z: BOOK.initialPosition.z },
 };
 const dhFingerprint = (dh: DHParameter[]) => dh.map((p) => [p.a,p.alpha,p.d,p.theta,p.thetaMin,p.thetaMax].join(',')).join(';');
 const homeDhFingerprint = dhFingerprint(INITIAL_DH_TABLE);
 function defaultPickPose(dh: DHParameter[], angles: number[], preset: TablePreset) {
-  const atHome = angles.length === HOME_JOINT_ANGLES.length && angles.every((angle,index)=>Math.abs(angle-HOME_JOINT_ANGLES[index])<1e-9);
-  if(atHome && dhFingerprint(dh)===homeDhFingerprint&&Math.abs(TABLE.height-TABLE_PRESETS[preset].height)<1e-9) return { ...HOME_DEFAULT_POSES[preset],z:BOOK.initialPosition.z };
+  // Re-search using the same center-aligned TCP target as the execution plan.
+  // Historical cached poses were measured for a lower, misaligned grasp datum.
   return findDefaultPickPosition(dh,angles,0);
 }
 
@@ -157,7 +157,7 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
   simulatorMode: 'manual',
   setSimulatorMode: (mode) => set((state) => ({ simulatorMode: mode, taskMode: mode === 'autonomous' ? 'autonomous' : 'predefined', simulatedObject: mode === 'predefined' && !state.isTaskPlaying ? { ...state.simulatedObject, position: { ...PREDEFINED_BOOK_POSITION }, rotation: { roll: 0, pitch: 0, yaw: 0 }, graspState: 'on-table', state: 'onTable', isAttached: false, isGrasped: false } : state.simulatedObject })),
   tablePreset: 'compact',
-  placementSurfaces: defaultPlacementSurfaces(),
+  placementSurfaces: defaultPlacementSurfaces().filter((surface) => surface.id === 'table'),
   surfaceEditError: null,
   updatePlacementSurface: (id, patch) => set((state) => {
     const oldTable=state.placementSurfaces.find((surface)=>surface.id==='table');
@@ -187,7 +187,7 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
     applyTablePreset(preset);
     const defaultPose = defaultPickPose(state.dhTable, state.jointAngles, preset);
     Object.assign(BOOK.initialPosition, defaultPose);
-    const surfaces=state.placementSurfaces.map((surface)=>surface.id==='table'?{...surface,center:{...TABLE.center},z:TABLE.height,size:{...surface.size,width:TABLE.width,depth:TABLE.depth}}:surface);
+    const surfaces=[{...defaultPlacementSurfaces()[0],center:{...TABLE.center},z:TABLE.height,size:{width:TABLE.width,depth:TABLE.depth}}];
     set({ tablePreset: preset, placementSurfaces:surfaces, showReachabilityOverlay: preset === 'compact', dropTarget: null, autonomousPlan: null, taskPhase: 'IDLE', autonomousPhase: 'IDLE', pickStatus: 'IDLE', simulatedObject: { ...state.simulatedObject, position: { ...defaultPose },surfaceId:'table', rotation: { roll: 0, pitch: 0, yaw: 0 }, reachability: { reachable: true, reason: 'Reachable' }, state: 'onTable', graspState: 'on-table', isAttached: false, isGrasped: false } });
   },
   activeTab: 'robot',

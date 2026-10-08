@@ -18,8 +18,10 @@ function wrapYaw(yaw:number){return Math.atan2(Math.sin(yaw),Math.cos(yaw));}
 const MARGIN=.012, TABLE_MARGIN=.025;
 // The finger tips stop 3 mm above the actual support top. On a 25 mm book
 // resting there, this gives 22 mm of vertical overlap with its side faces.
-export const GRASP_TCP_SURFACE_CLEARANCE = 0.00458;
-function surfaceTcpZ(surface:PlacementSurface){return surfaceBookZ(surface)-BOOK.size.z/2+GRASP_TCP_SURFACE_CLEARANCE;}
+// The TCP is the grasp datum at book center. At this height the modeled
+// finger boxes clear the supporting surface; see heightCalibration.test.ts.
+export const GRASP_TCP_SURFACE_CLEARANCE = BOOK.size.z / 2;
+function surfaceTcpZ(surface:PlacementSurface){return surfaceBookZ(surface);}
 function objectHalfExtents(yaw:number){const c=Math.abs(Math.cos(yaw)),s=Math.abs(Math.sin(yaw));return {x:c*BOOK.size.x/2+s*BOOK.size.y/2,y:s*BOOK.size.x/2+c*BOOK.size.y/2};}
 function inBounds(p:Vector3D,yaw=0){const ext=objectHalfExtents(yaw);return Math.abs(p.x-TABLE.center.x)<=TABLE.width/2-ext.x-MARGIN+1e-9&&Math.abs(p.y-TABLE.center.y)<=TABLE.depth/2-ext.y-MARGIN+1e-9;}
 export function isInsideBaseKeepOut(p:Vector3D){return Math.hypot(p.x-ROBOT_BASE_KEEP_OUT.center.x,p.y-ROBOT_BASE_KEEP_OUT.center.y)<ROBOT_BASE_KEEP_OUT.radius+Math.hypot(BOOK.size.x/2,BOOK.size.y/2);}
@@ -35,15 +37,12 @@ export function validatePickSequence(dh:DHParameter[],position:Vector3D,current:
  }
  return {reachable:true,reason:'Reachable'};
 }
+function graspCandidates(bookYaw:number):GraspCandidate[] {
+ const axisYaw=canonicalBookYaw(bookYaw),wideClearance=(GRIPPER.openWidth-GRIPPER.fingerThickness-BOOK.size.x)/2;
+ return [{name:'narrow axis',toolYaw:axisYaw+Math.PI/2,width:BOOK.size.y},{name:'narrow axis, flipped wrist',toolYaw:axisYaw-Math.PI/2,width:BOOK.size.y},...(wideClearance>=.008?[{name:'wide axis',toolYaw:axisYaw,width:BOOK.size.x},{name:'wide axis, flipped wrist',toolYaw:axisYaw+Math.PI,width:BOOK.size.x}]:[])];
+}
 export function chooseGraspCandidate(dh:DHParameter[],position:Vector3D,current:number[],bookYaw:number,onSequenceValidation?:()=>void,surfaces:PlacementSurface[]=[defaultTableSurface()],surfaceId='table'):GraspCandidate|null {
- const axisYaw=canonicalBookYaw(bookYaw);
- const wideClearance=(GRIPPER.openWidth-GRIPPER.fingerThickness-BOOK.size.x)/2;
- const candidates:GraspCandidate[]=[
-  {name:'narrow axis',toolYaw:axisYaw+Math.PI/2,width:BOOK.size.y},
-  {name:'narrow axis, flipped wrist',toolYaw:axisYaw-Math.PI/2,width:BOOK.size.y},
-  ...(wideClearance>=.008?[{name:'wide axis',toolYaw:axisYaw,width:BOOK.size.x},{name:'wide axis, flipped wrist',toolYaw:axisYaw+Math.PI,width:BOOK.size.x}]:[]),
- ];
- return candidates.find((candidate)=>{onSequenceValidation?.();return validatePickSequence(dh,position,current,candidate.toolYaw,surfaces,surfaceId).reachable;})??null;
+ return graspCandidates(bookYaw).find((candidate)=>{onSequenceValidation?.();return validatePickSequence(dh,position,current,candidate.toolYaw,surfaces,surfaceId).reachable;})??null;
 }
 function toolRotation(yaw:number,tilt=0){return rpyToMatrix(Math.PI-tilt,0,yaw);}
 function flangeTarget(tcp:Vector3D,yaw:number,tilt=0):Vector3D {const r=toolRotation(yaw,tilt);return {x:tcp.x-r[2]*TCP_OFFSET.z,y:tcp.y-r[6]*TCP_OFFSET.z,z:tcp.z-r[10]*TCP_OFFSET.z};}
@@ -102,7 +101,7 @@ export function analyticalIKSeeds(dh:DHParameter[],tcp:Vector3D,target:Matrix4x4
  return seedsOut.sort((a,b)=>a.reduce((s,q,i)=>s+(q-current[i])**2,0)-b.reduce((s,q,i)=>s+(q-current[i])**2,0));
 }
 function solvePose(dh:DHParameter[],tcp:Vector3D,yaw:number,current:number[],maxTilt=degToRad(5),minTilt=0,surfaces:PlacementSurface[]=[defaultTableSurface()],allowedSurfaceId?:string):{ik?:IKResult;tilt:number;ikSeedUsed?:number;reason:string;diagnostics:PlanFailure[]}{const shoulderZ=ROBOT_MOUNT_HEIGHT+PUMA_GEOMETRY.d1,diagnostics:PlanFailure[]=[];if(Math.hypot(tcp.x,tcp.y,tcp.z-shoulderZ)-TCP_OFFSET.z>PUMA_GEOMETRY.l2+PUMA_GEOMETRY.l3)return {tilt:0,reason:'outside workspace',diagnostics:[{stage:'IK',kind:'outside workspace',linkName:null,otherPrimitive:null,penetrationMm:null,jointAngles:null,tiltDeg:0,ikSeedUsed:null}]};let best:{ik:IKResult;tilt:number;cost:number;seed:number}|undefined;let positionCandidate=false,limitHit=false,tableCollision=false,baseCollision=false;const tiltStep=maxTilt<=degToRad(5)?degToRad(5):degToRad(10);for(let tilt=minTilt;tilt<=maxTilt+1e-6;tilt+=tiltStep){const goal=flangeTarget(tcp,yaw,tilt),orientation=toolRotation(yaw,tilt),toolZAxis={x:orientation[2],y:orientation[6],z:orientation[10]};const candidateSeeds=[...seeds(current,goal),...analyticalIKSeeds(dh,tcp,orientation,current)];for(let si=0;si<candidateSeeds.length;si++){const ik=solveInverseKinematics(dh,{position:goal,toolZAxis,yaw},{initialAngles:candidateSeeds[si],positionTolerance:.0015,orientationTolerance:degToRad(.5),maxIterations:150});limitHit ||= ik.hitLimit.some(Boolean);if(ik.residualPos<.008)positionCandidate=true;if(!ik.converged||ik.residualPos>.0015){diagnostics.push({stage:'IK',kind:ik.hitLimit.some(Boolean)?'joint limit':'IK non-convergence',linkName:null,otherPrimitive:null,penetrationMm:null,jointAngles:[...ik.angles],tiltDeg:tilt*180/Math.PI,ikSeedUsed:si});continue;}const fk=computeForwardKinematics(dh,ik.angles);if(axisTilt(fk)>maxTilt){diagnostics.push({stage:'IK',kind:'orientation limit',linkName:null,otherPrimitive:null,penetrationMm:null,jointAngles:[...ik.angles],tiltDeg:tilt*180/Math.PI,ikSeedUsed:si});continue;}const collision=poseCollision(dh,ik.angles,true,surfaces,allowedSurfaceId);if(collision){tableCollision ||= collision.kind==='collision with table';baseCollision ||= collision.kind==='link-vs-base collision';diagnostics.push({stage:'POSE',kind:collision.kind,linkName:collision.linkName,otherPrimitive:collision.otherPrimitive,penetrationMm:collision.penetrationMm,sampleZMm:collision.sampleZMm,jointAngles:[...ik.angles],tiltDeg:tilt*180/Math.PI,ikSeedUsed:si});continue;}const cost=ik.angles.reduce((s,q,i)=>s+(q-current[i])**2,0)+tilt*tilt*4;if(!best||cost<best.cost)best={ik,tilt,cost,seed:si};if(si===0)return {ik,tilt,ikSeedUsed:si,reason:'Reachable',diagnostics};}if(best)break;}const reason=baseCollision?'link-vs-base collision':tableCollision?'collision with table':limitHit?'joint limit':positionCandidate?'orientation unreachable':'outside workspace';return best?{ik:best.ik,tilt:best.tilt,ikSeedUsed:best.seed,reason:'Reachable',diagnostics}:{tilt:0,reason,diagnostics};}
-export function createPickPlan(dh:DHParameter[],objectPosition:Vector3D,currentAngles:number[],destination?:DropTarget|null,yaw=0,tiltEnabled=true,surfaces:PlacementSurface[]=[defaultTableSurface()],sourceSurfaceId='table'):PickPlan{
+function createPickPlanForCandidate(dh:DHParameter[],objectPosition:Vector3D,currentAngles:number[],destination:DropTarget|null|undefined,yaw:number,tiltEnabled:boolean,surfaces:PlacementSurface[],sourceSurfaceId:string,forcedCandidate?:GraspCandidate):PickPlan{
  const fail=(stage:string,kind:string,diagnostics:PlanFailure[]=[]):PickPlan=>{const expected=kind.includes('link-vs-base')?'link-vs-base collision':kind.includes('collision with table')?'collision with table':null;const chosen=(expected?[...diagnostics].reverse().find((d)=>d.kind===expected):undefined)??diagnostics.at(-1)??{stage,kind,linkName:null,otherPrimitive:null,penetrationMm:null,jointAngles:null,tiltDeg:null,ikSeedUsed:null};return {waypoints:[],reachable:false,reason:kind==='Outside table bounds'?'Outside table bounds':kind==='Inside robot base keep-out'?'Inside robot base keep-out':kind,pickableZone:[],worstIkResidual:Infinity,failure:chosen,diagnostics,graspCandidate:'',gripWidth:BOOK.size.y};};
  const sourceSurface=surfaces.find((surface)=>surface.id===sourceSurfaceId)??surfaces.find((surface)=>surface.id==='table')!;
  const sourceError=placementSurfaceError(sourceSurface,objectPosition,yaw);
@@ -125,7 +124,7 @@ export function createPickPlan(dh:DHParameter[],objectPosition:Vector3D,currentA
  const shoulderZ=ROBOT_MOUNT_HEIGHT+PUMA_GEOMETRY.d1;
  const distanceToShoulder=Math.hypot(objectPosition.x-ROBOT_BASE_KEEP_OUT.center.x,objectPosition.y-ROBOT_BASE_KEEP_OUT.center.y,objectPosition.z-shoulderZ);
  if(distanceToShoulder-TCP_OFFSET.z>PUMA_GEOMETRY.l2+PUMA_GEOMETRY.l3)return fail('PRE-GRASP','outside workspace',[{stage:'PRE-GRASP',kind:'outside workspace',linkName:null,otherPrimitive:null,penetrationMm:null,jointAngles:null,tiltDeg:null,ikSeedUsed:null}]);
- const chosen=chooseGraspCandidate(dh,objectPosition,currentAngles,yaw,undefined,surfaces,sourceSurface.id);
+ const chosen=forcedCandidate??chooseGraspCandidate(dh,objectPosition,currentAngles,yaw,undefined,surfaces,sourceSurface.id);
  if(!chosen)return fail('GRASP','Book orientation not reachable here at any wrist angle');
  // Preserve the declared book-to-tool rotation from grasp through release.
  const relativeBookYaw=wrapYaw(yaw-chosen.toolYaw);
@@ -140,6 +139,13 @@ export function createPickPlan(dh:DHParameter[],objectPosition:Vector3D,currentA
  for(const target of targets){const maxTilt=target.id==='PLACE'||target.id==='RETREAT'?graspTilt:degToRad(tiltEnabled?30:5);const minTilt=target.id==='PLACE'||target.id==='RETREAT'?graspTilt:0;const allowedSurface=target.id==='GRASP'?sourceSurface.id:target.id==='PLACE'?targetSurface.id:undefined;const solved=solvePose(dh,target.p,target.yaw,q,maxTilt,minTilt,surfaces,allowedSurface);diagnostics.push(...solved.diagnostics.map((d)=>({...d,stage:target.id})));if(!solved.ik){const why=target.id.includes('PLACE')||target.id==='RETREAT'?`${solved.reason==='outside workspace'?'Destination out of reach on '+targetSurface.name+' at this height':solved.reason} at ${target.id}`:`${solved.reason} at ${target.id}`;return fail(target.id,why,diagnostics);}const ik=solved.ik;if(target.id==='GRASP')graspTilt=solved.tilt;const flange=flangeTarget(target.p,target.yaw,solved.tilt);const collision=pathCollision(dh,prev,ik.angles,target.contact,target.id==='RETREAT',surfaces,allowedSurface);if(collision){const failure:PlanFailure={stage:target.id,kind:collision.kind,linkName:collision.linkName,otherPrimitive:collision.otherPrimitive,penetrationMm:collision.penetrationMm,sampleZMm:collision.sampleZMm,jointAngles:collision.jointAngles??[...ik.angles],tiltDeg:solved.tilt*180/Math.PI,ikSeedUsed:solved.ikSeedUsed??null};diagnostics.push(failure);return {...fail(target.id,`${collision.kind} on path to ${target.id}`,diagnostics),failure,worstIkResidual:Math.max(worst,ik.residualPos)};}waypoints.push({id:target.id,position:flange,jointAngles:ik.angles,tiltDeg:solved.tilt*180/Math.PI});q=ik.angles;prev=ik.angles;worst=Math.max(worst,ik.residualPos);}
  return {waypoints,reachable:true,reason:'Reachable',pickableZone:[],worstIkResidual:worst,failure:null,diagnostics,graspCandidate:chosen.name,gripWidth:chosen.width,liftHeight};
 }
+export function planPickAndPlace(dh:DHParameter[],objectPosition:Vector3D,currentAngles:number[],destination?:DropTarget|null,yaw=0,tiltEnabled=true,surfaces:PlacementSurface[]=[defaultTableSurface()],sourceSurfaceId='table'):PickPlan {
+ const candidates=graspCandidates(yaw);
+ let last:PickPlan|undefined;
+ for(const candidate of candidates){const plan=createPickPlanForCandidate(dh,objectPosition,currentAngles,destination,yaw,tiltEnabled,surfaces,sourceSurfaceId,candidate);if(plan.reachable)return plan;last=plan;}
+ return last??createPickPlanForCandidate(dh,objectPosition,currentAngles,destination,yaw,tiltEnabled,surfaces,sourceSurfaceId);
+}
+export const createPickPlan=planPickAndPlace;
 export function clampObjectToTable(position:Vector3D,yaw=0):Vector3D{const ext=objectHalfExtents(yaw),x=TABLE.width/2-ext.x-MARGIN,y=TABLE.depth/2-ext.y-MARGIN;return {x:Math.max(TABLE.center.x-x,Math.min(TABLE.center.x+x,position.x)),y:Math.max(TABLE.center.y-y,Math.min(TABLE.center.y+y,position.y)),z:BOOK.initialPosition.z};}
 export function findNearestPickablePosition(dh:DHParameter[],current:number[],position:Vector3D,bookYaw:number,destination?:DropTarget|null):Vector3D {
  const candidates:Vector3D[]=[];
@@ -185,9 +191,12 @@ export function findDefaultPickPosition(dh:DHParameter[],currentAngles:number[],
   for(let y=TABLE.center.y-TABLE.depth/2+.005;y<TABLE.center.y+TABLE.depth/2;y+=.01){
    const p={x,y,z:BOOK.initialPosition.z};if(inBounds(p,yaw)&&!isInsideBaseKeepOut(p))candidates.push(p);
   }
- candidates.sort((a,b)=>Math.hypot(b.x-TABLE.center.x,b.y-TABLE.center.y)-Math.hypot(a.x-TABLE.center.x,a.y-TABLE.center.y));
+ // Keep the reset pose within the measured full-sequence workspace. The old
+ // farthest-from-table-center heuristic selected an edge cell where the
+ // center-aligned TCP could not reach pre-grasp.
+ candidates.sort((a,b)=>Math.hypot(a.x-BOOK.initialPosition.x,a.y-BOOK.initialPosition.y)-Math.hypot(b.x-BOOK.initialPosition.x,b.y-BOOK.initialPosition.y));
  return candidates.find((p)=>chooseGraspCandidate(dh,p,currentAngles,yaw)!==null)??BOOK.initialPosition;
 }
 export function computePickableZone(dh:DHParameter[],currentAngles:number[],yawSamples=[0],step=.08){const zone:Vector3D[]=[];const x0=TABLE.center.x-TABLE.width/2+BOOK.size.x/2+MARGIN,x1=TABLE.center.x+TABLE.width/2-BOOK.size.x/2-MARGIN,y0=TABLE.center.y-TABLE.depth/2+BOOK.size.y/2+MARGIN,y1=TABLE.center.y+TABLE.depth/2-BOOK.size.y/2-MARGIN;for(let x=x0;x<=x1+1e-6;x+=step)for(let y=y0;y<=y1+1e-6;y+=step){const p={x,y,z:BOOK.initialPosition.z};if(isInsideBaseKeepOut(p))continue;if(yawSamples.every(yaw=>solvePose(dh,p,yaw+(BOOK.size.y<BOOK.size.x?Math.PI/2:0),currentAngles,degToRad(30)).ik))zone.push(p);}return zone;}
 
-Object.assign(BOOK.initialPosition, {x:0.8150000000000002,y:-0.08500000000000002,z:TABLE.height+BOOK.size.z/2});
+Object.assign(BOOK.initialPosition, {x:0.80,y:-0.04,z:TABLE.height+BOOK.size.z/2});

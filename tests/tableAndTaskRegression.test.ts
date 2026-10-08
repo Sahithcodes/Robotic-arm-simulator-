@@ -35,7 +35,7 @@ describe('table presets and task regressions', () => {
     const store=useSimulationStore.getState();store.setTablePreset('compact');store.resetTask();
     store.setDropTarget({x:.61,y:0,yaw:0});
     store.planAutonomousPick();
-    expect(useSimulationStore.getState().autonomousPlan?.reachable).toBe(true);
+    expect(useSimulationStore.getState().autonomousPlan?.reachable,useSimulationStore.getState().autonomousPlan?.reason).toBe(true);
     useSimulationStore.getState().setDropTarget({x:.62,y:0,yaw:0});
     expect(useSimulationStore.getState().autonomousPlan).toBeNull();
     expect(useSimulationStore.getState().taskPhase).toBe('IDLE');
