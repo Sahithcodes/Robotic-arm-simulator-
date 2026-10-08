@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:acceptance": "vitest run src/robotics/__tests__/acceptance.test.ts",
+    "verify": "npm run lint && npm test && npm run build && npm run test:acceptance"
   },
   "dependencies": {
     "@react-three/drei": "^9.120.0",

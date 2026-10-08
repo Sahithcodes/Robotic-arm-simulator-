@@ -580,7 +580,7 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
           autonomousSegmentElapsed: 0,
           autonomousStartAngles: [...angles],
           autonomousPhase: nextPhase,
-          pickStatus: nextWaypoint?.id === 'GRASP' ? 'OPEN' : nextWaypoint?.id === 'LIFT' ? 'LIFT' : nextWaypoint?.id === 'PRE-PLACE' ? 'LOWER' : nextWaypoint?.id === 'PLACE' ? 'PLACE' : nextWaypoint?.id === 'RETREAT' ? 'RETREAT' : 'TRANSPORT',
+          pickStatus: nextWaypoint?.id === 'GRASP' ? 'OPEN' : nextWaypoint?.id === 'LIFT' ? 'LIFT' : nextWaypoint?.id === 'PRE-PLACE' ? 'TRANSPORT' : nextWaypoint?.id === 'PLACE' ? 'LOWER' : nextWaypoint?.id === 'RETREAT' ? 'RETREAT' : 'TRANSPORT',
           taskPhase: nextPhase,
         });
         return;

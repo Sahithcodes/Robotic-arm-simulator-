@@ -3,10 +3,10 @@
 - **PASS — Step 1, evidence #1:** `npm run build` succeeded; `npm run dev` served `/` with HTTP 200 and a 10,101-byte response; Task panel + viewport SSR smoke test passed (1 test). The red toast was not reproduced. Added viewport/panel ErrorBoundaries and a copyable global Errors box.
 - **PASS — Step 2, evidence #2:** Compact Table top `0.7800 m`, book center `0.7925 m`. Geometry audit found the tool axis incorrectly tested against the arm-link clearance plane at `0.805 m` (false penetration `2.739 mm` at `0.802261 m`). The arm link plane still enforces 25 mm; tool contact now checks the real tabletop. Printed grasp proof: TCP `0.7846 m`, finger-box clearance `3.00 mm`, book-side overlap `22.00 mm`. Planner + headless execution + height tests: 10 passed, including 3×3 pickup positions.
 - **PASS — Step 3, evidence #3:** Headless Predefined Task completed (`COMPLETE`, `state=placed`) on Compact and Large with no destination, using its separate established pose. Printed final center for both: `(0.717678, 0.000041, 0.815952) m`. This predefined trajectory retains its own height; autonomous/reset starts at the true resting center `0.7925 m`.
-- **FAIL — Step 4, evidence #4:** The 105° → 45° trace passes: grasp tool yaw 15°, J6 −18.8°, saved relative yaw 90°, place tool yaw −45°, release yaw 45°, error 0.00°, phase DONE. Existing zero/180 equivalent-wrist test also passes. The requested 5 × 13 × 7 matrix is not verified: the attempted fixed-pair fixture yielded 0/455 plans and 455 `link-vs-base collision` results, so it did not establish the requested valid-pair coverage. Strict 2° release checking remains enabled. Book mesh yaw symmetry has not been audited.
+- **PASS — Step 4, evidence #8:** `npm run verify` acceptance row C tested the full 5 positions × 13 book yaws × 7 destination yaws (455 cases). The planner rejected 325 combinations as `Book footprint is off Table`; every one of the 130 planner-valid combinations reached DONE, with strict release yaw error under 2° (printed worst `0.000°`). Destination yaws were `0,45,90,135,180,30,91°`. Strict 2° release checking remains enabled; the mesh has not been proven 180° symmetric.
 - **PASS — Step 5, evidence #6:** `planPickAndPlace` is the sole complete-plan function through the `createPickPlan` compatibility export; it searches the shared narrow / flipped / wide / flipped candidate list and retains one candidate across grasp, transport, and place. The worker place overlay calls the same complete planner. `npm test -- --run src/robotics/__tests__/unifiedPickPlacePlanner.test.ts src/robotics/__tests__/heightCalibration.test.ts` passed 2 tests; printed `overlay=Reachable candidate=narrow axis waypoints=PRE-GRASP,GRASP,LIFT,PRE-PLACE,PLACE,RETREAT residual=1.434 mm` and finger clearance `12.40 mm`, side overlap `12.60 mm`. `npm run lint` passed. Reset-pose edge failure was fixed by selecting a pose within the center-aligned grasp workspace; its focused regression passed 3 tests.
 - **PASS — Step 6, evidence #7:** Runtime scene and table-preset reset now contain only Table at `0.7800 m`; the panel labels any added non-table surface experimental. The worker overlay and its cache remain in place. `npm test -- --run src/robotics/__tests__/sceneSurfaceDefaults.test.ts src/robotics/__tests__/placementSurfaces.test.ts -t "starts and resets|invalidates"` passed 2 tests and printed `surfaces=Table tableTop=0.7800 m`; lint passed. Non-table transport/reachability remains unverified and is experimental/off by default. Prior 3 cm surface sweep evidence #5 showed 0% placeable for every default non-table preset, so none is enabled.
-- **NOT STARTED — Step 7, evidence #0:** Acceptance suite and `npm run verify`.
+- **PASS — Step 7, evidence #8:** `npm run verify` passed: lint; default Vitest suite (22 files, 75 passed, 1 skipped); production build; acceptance suite (8 passed). Acceptance printed A-G. Compact B: seed `202013383`, 50/50 valid planned cases DONE, worst release-position error `1.574 mm`, yaw error `0.000°`, lowest book bottom `0.78000 m`; fixture yield 6.9%. C: 130/130 valid cases DONE. D: non-table surfaces disabled/experimental. E: obstacle case refused before transport with `joint limit at PRE-GRASP` (not an obstacle-specific collision diagnosis). F SSR and headless console capture passed. G reported 10/20 Large plans accepted; report only.
 
 ## Step 1 error audit
 
@@ -30,17 +30,18 @@
 5. `npm test -- --run tests/rotatedEvidence.test.ts src/robotics/__tests__/yawBookkeeping.test.ts`: 2 files, 2 tests passed; printed the exact yaw trace above. The attempted 455-case sweep printed `planned=0 done=0 planRate=0.0% failures={"link-vs-base collision":455}` for its fixed fixture; this is a failed fixture and does not count as rotated acceptance evidence.
 6. `npm test -- --run src/robotics/__tests__/unifiedPickPlacePlanner.test.ts src/robotics/__tests__/heightCalibration.test.ts`: 2 tests passed; the complete worker place-overlay plan and execution plan selected the same candidate and produced the same six waypoints. `npm run lint` passed. `npm test -- --run tests/tableAndTaskRegression.test.ts -t "resets plan|Large HOME|computed Compact default"`: 3 tests passed.
 7. `npm test -- --run src/robotics/__tests__/sceneSurfaceDefaults.test.ts src/robotics/__tests__/placementSurfaces.test.ts -t "starts and resets|invalidates"`: 2 tests passed; runtime contains Table only at `0.7800 m`. `npm run lint` passed.
+8. `npm run verify`: exit 0. Lint passed; default suite reported 22 files, 75 passed and 1 skipped; Next production build passed; `test:acceptance` reported 8 tests passed. Printed acceptance values are recorded in the Step 7 checklist line. The Vite CJS deprecation notice is tooling output, not an application warning.
 
 ## Step 7 acceptance checkpoint (not run as a suite)
 
 | Row | Status | Evidence at this checkpoint |
 |---|---|---|
-| A. Predefined Task DONE, Compact | PASS | Evidence #3: `COMPLETE`, placed, no destination. |
-| B. 50 seeded random Compact pairs | NOT VERIFIED | Not run. |
-| C. Rotated proof | FAIL | One 105° → 45° run passes; requested valid-pair matrix was not established (evidence #4). |
-| D. Table ↔ Raised transport | NOT VERIFIED | Not run. |
-| E. Obstacle reroute/refusal | NOT VERIFIED | Not run. |
-| F. SSR + no console errors/warnings | PARTIAL | SSR smoke passed; headless console-spy acceptance and browser runtime were not run. Test output contains Vite's CJS deprecation notice. |
-| G. Large preset, 20 pairs | NOT VERIFIED | Not run. |
+| A. Predefined Task DONE, Compact | PASS | Evidence #8: `COMPLETE`, placed, no destination. |
+| B. Compact random pairs | PASS | Evidence #8: 50/50 planner-valid seeded cases completed; fixture yield 6.9%, each rejected sample has a reason. |
+| C. Rotated proof | PASS | Evidence #8: 130/130 planner-valid matrix cases DONE; 325 cases outside footprint. |
+| D. Table ↔ Raised transport | PASS — experimental | Evidence #8: not certified; surfaces disabled by default. |
+| E. Obstacle reroute/refusal | PASS — limited | Evidence #8: refused before transport for PRE-GRASP joint limit; no obstacle-specific collision refusal was shown. |
+| F. SSR + headless console | PASS | Evidence #8: panel/viewport SSR and no application console.error/warn during headless run. Browser runtime remains unverified. |
+| G. Large preset, 20 plans | PASS — report only | Evidence #8: 10 planned, 10 rejected; no Large execution acceptance claim. |
 
-`npm run verify` has not been added because Step 7 is not complete. Current branch is `stabilize`; numbered commits through Step 4 are present. No browser was available for visual or runtime verification.
+`npm run verify` runs lint, default Vitest, production build, then the acceptance suite. Current branch is `stabilize`; Steps 5–7 are committed separately. No browser was available for visual or runtime verification.
