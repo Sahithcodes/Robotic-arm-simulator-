@@ -28,3 +28,17 @@
 3. `npm test -- --run src/robotics/__tests__/heightCalibration.test.ts tests/autonomousExecution.test.ts tests/autonomousPlanner.test.ts`: 3 files, 10 tests passed. The height test printed all measured values listed in checklist evidence #2.
 4. `npm test -- --run tests/tableAndTaskRegression.test.ts -t "completes and places the Predefined Task"`: 1 test passed; printed COMPLETE/placed, final pose, and `destination=none` for Compact and Large.
 5. `npm test -- --run tests/rotatedEvidence.test.ts src/robotics/__tests__/yawBookkeeping.test.ts`: 2 files, 2 tests passed; printed the exact yaw trace above. The attempted 455-case sweep printed `planned=0 done=0 planRate=0.0% failures={"link-vs-base collision":455}` for its fixed fixture; this is a failed fixture and does not count as rotated acceptance evidence.
+
+## Step 7 acceptance checkpoint (not run as a suite)
+
+| Row | Status | Evidence at this checkpoint |
+|---|---|---|
+| A. Predefined Task DONE, Compact | PASS | Evidence #3: `COMPLETE`, placed, no destination. |
+| B. 50 seeded random Compact pairs | NOT VERIFIED | Not run. |
+| C. Rotated proof | FAIL | One 105° → 45° run passes; requested valid-pair matrix was not established (evidence #4). |
+| D. Table ↔ Raised transport | NOT VERIFIED | Not run. |
+| E. Obstacle reroute/refusal | NOT VERIFIED | Not run. |
+| F. SSR + no console errors/warnings | PARTIAL | SSR smoke passed; headless console-spy acceptance and browser runtime were not run. Test output contains Vite's CJS deprecation notice. |
+| G. Large preset, 20 pairs | NOT VERIFIED | Not run. |
+
+`npm run verify` has not been added because Step 7 is not complete. Current branch is `stabilize`; numbered commits through Step 4 are present. No browser was available for visual or runtime verification.
