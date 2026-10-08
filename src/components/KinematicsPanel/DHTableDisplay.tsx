@@ -1,11 +1,11 @@
 'use client';
 
 import React from 'react';
-import { useSimulationStore } from '../../store/simulationStore';
 import { radToDeg } from '../../robotics/transforms';
+import { useThrottledSimulationSelector } from '../../store/useThrottledSimulationSelector';
 
 export const DHTableDisplay: React.FC = () => {
-  const { dhTable, jointAngles } = useSimulationStore();
+  const { dhTable,jointAngles } = useThrottledSimulationSelector((s) => ({dhTable:s.dhTable,jointAngles:s.jointAngles}));
 
   return (
     <section className="control-panel">

@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useSimulationStore } from '../../store/simulationStore';
+import { useThrottledSimulationSelector } from '../../store/useThrottledSimulationSelector';
 import { GRIPPER, TASK5_WAYPOINTS } from '../../robotics/task5';
 import { computeForwardKinematics } from '../../robotics/forwardKinematics';
 import { distance } from '../../robotics/task5';
+import { getOverlayMetrics, subscribeOverlayMetrics } from '../../robotics/overlayMetrics';
 
 function reachabilityMessage(reason: string): string {
   if (/Destination too close/i.test(reason)) return 'Destination too close to the robot base';
@@ -20,7 +21,9 @@ function reachabilityMessage(reason: string): string {
   return reason === 'Reachable' ? 'Ready to plan' : 'Plan required';
 }
 
-export const TaskExecutionPanel: React.FC = () => {
+const TaskExecutionPanelDebug: React.FC = () => {
+  const [reachability,setReachability]=useState(getOverlayMetrics().surfaceReachability);
+  useEffect(()=>subscribeOverlayMetrics((metrics)=>setReachability(metrics.surfaceReachability)),[]);
   const {
     taskPhase,
     pickStatus,
@@ -60,20 +63,28 @@ export const TaskExecutionPanel: React.FC = () => {
     setDestinationPickArmed,
     tablePreset,
     setTablePreset,
+    placementSurfaces,
+    surfaceEditError,
+    updatePlacementSurface,
+    addPlacementSurface,
+    removePlacementSurface,
     allowUnreachablePlacement,
     setAllowUnreachablePlacement,
-  } = useSimulationStore();
+  } = useThrottledSimulationSelector((s) => ({
+    taskPhase:s.taskPhase,pickStatus:s.pickStatus,simulatorMode:s.simulatorMode,setSimulatorMode:s.setSimulatorMode,setBookYawDegrees:s.setBookYawDegrees,isTaskPlaying:s.isTaskPlaying,currentWaypointIndex:s.currentWaypointIndex,positionError:s.positionError,placementError:s.placementError,isGripperOpen:s.isGripperOpen,isHoldingBook:s.isHoldingBook,showRobotDebug:s.showRobotDebug,showGraspDebug:s.showGraspDebug,graspDebugLog:s.graspDebugLog,showJointLabels:s.showJointLabels,showGraspRegion:s.showGraspRegion,showPath:s.showPath,taskWaypoints:s.taskWaypoints,playTask:s.playTask,pauseTask:s.pauseTask,resetTask:s.resetTask,setShowRobotDebug:s.setShowRobotDebug,setShowGraspDebug:s.setShowGraspDebug,setShowJointLabels:s.setShowJointLabels,setShowGraspRegion:s.setShowGraspRegion,setShowPath:s.setShowPath,simulatedObject:s.simulatedObject,fkResult:s.fkResult,dhTable:s.dhTable,autonomousPlan:s.autonomousPlan,planAutonomousPick:s.planAutonomousPick,executeAutonomousPick:s.executeAutonomousPick,dropTarget:s.dropTarget,setDropTarget:s.setDropTarget,destinationPickArmed:s.destinationPickArmed,setDestinationPickArmed:s.setDestinationPickArmed,tablePreset:s.tablePreset,setTablePreset:s.setTablePreset,placementSurfaces:s.placementSurfaces,surfaceEditError:s.surfaceEditError,updatePlacementSurface:s.updatePlacementSurface,addPlacementSurface:s.addPlacementSurface,removePlacementSurface:s.removePlacementSurface,allowUnreachablePlacement:s.allowUnreachablePlacement,setAllowUnreachablePlacement:s.setAllowUnreachablePlacement,
+  }));
   const [destX, setDestX] = useState('');
   const [destY, setDestY] = useState('');
   const [destYaw, setDestYaw] = useState('0');
+  const [destSurface, setDestSurface] = useState('table');
   const declareDestination = () => {
     if (!destX.trim() || !destY.trim()) return;
     const x = Number(destX), y = Number(destY);
     const yaw = Number(destYaw);
-    if (Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(yaw)) setDropTarget({ x, y, yaw });
+    if (Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(yaw)) setDropTarget({ x, y, yaw, surfaceId: destSurface });
   };
   useEffect(() => {
-    if (dropTarget) { setDestX(String(dropTarget.x)); setDestY(String(dropTarget.y)); setDestYaw(String(dropTarget.yaw)); }
+    if (dropTarget) { setDestX(String(dropTarget.x)); setDestY(String(dropTarget.y)); setDestYaw(String(dropTarget.yaw)); setDestSurface(dropTarget.surfaceId ?? 'table'); }
   }, [dropTarget]);
   const graspWaypoint = autonomousPlan?.waypoints.find((waypoint) => waypoint.id === 'GRASP');
   const plannedFk = graspWaypoint ? computeForwardKinematics(dhTable, graspWaypoint.jointAngles) : null;
@@ -97,7 +108,24 @@ export const TaskExecutionPanel: React.FC = () => {
         <option value="large">Large (experimental)</option>
       </select>
       <div className="readout-group">
+        <div className="readout-label">PLACEMENT SURFACES · NON-TABLE SURFACES ARE EXPERIMENTAL</div>
+        <div className="task-coordinates">Yaw 0° reachability (percent of valid surface area)</div>
+        {placementSurfaces.map((surface)=>{const report=reachability[surface.id];const floorUnreachable=surface.id==='floor'&&report?.pickablePct===0;return <div className="task-coordinates" key={`reach-${surface.id}`}>{surface.name}: {report?.pickablePct===null||!report? 'Computing' : `${report.pickablePct.toFixed(1)}% pickable · ${report.placeablePct===null? 'computing placeability' : `${report.placeablePct.toFixed(1)}% placeable`}`}{floorUnreachable?' · Not reachable with this arm':''}</div>;})}
+        {placementSurfaces.map((surface) => <div className="task-coordinates" key={surface.id}>
+          <b>{surface.name}</b> · {surface.id===simulatedObject.surfaceId?'book':''}
+          <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:4}}>
+            <label>Z <input aria-label={`${surface.name} height`} type="number" step="0.1" value={surface.z.toFixed(2)} disabled={isTaskPlaying} onChange={(e)=>{const value=Number(e.target.value);if(Number.isFinite(value))updatePlacementSurface(surface.id,{z:value});}} onBlur={(e)=>{const value=Number(e.target.value);if(Number.isFinite(value))updatePlacementSurface(surface.id,{z:Math.round(value*10)/10});}} /></label>
+            <label>X <input aria-label={`${surface.name} X`} type="number" step="0.01" value={surface.center.x.toFixed(2)} disabled={isTaskPlaying} onChange={(e)=>updatePlacementSurface(surface.id,{center:{...surface.center,x:Number(e.target.value)}})} /></label>
+            <label>Y <input aria-label={`${surface.name} Y`} type="number" step="0.01" value={surface.center.y.toFixed(2)} disabled={isTaskPlaying} onChange={(e)=>updatePlacementSurface(surface.id,{center:{...surface.center,y:Number(e.target.value)}})} /></label>
+          </div>
+          {surface.id!=='table'&&<button type="button" disabled={isTaskPlaying} onClick={()=>removePlacementSurface(surface.id)}>REMOVE</button>}
+        </div>)}
+        <div className="task-buttons"><button type="button" disabled={isTaskPlaying} onClick={()=>addPlacementSurface('rectangle')}>ADD EXPERIMENTAL RECTANGLE</button><button type="button" disabled={isTaskPlaying} onClick={()=>addPlacementSurface('annular-sector')}>ADD EXPERIMENTAL SECTOR</button></div>
+        {surfaceEditError&&<div className="error-readout">{surfaceEditError}</div>}
+      </div>
+      <div className="readout-group">
         <div className="readout-label">DESTINATION</div>
+        <label className="path-toggle">Surface <select value={destSurface} onChange={(e)=>setDestSurface(e.target.value)}>{placementSurfaces.map((surface)=><option key={surface.id} value={surface.id}>{surface.name}</option>)}</select></label>
         <label className="path-toggle">X (m) <input aria-label="Destination X" type="number" step="0.01" value={destX} onChange={(event) => setDestX(event.target.value)} /></label>
         <label className="path-toggle">Y (m) <input aria-label="Destination Y" type="number" step="0.01" value={destY} onChange={(event) => setDestY(event.target.value)} /></label>
         <label className="path-toggle">Yaw (deg) <input aria-label="Destination yaw in degrees" type="number" step="1" value={destYaw} onChange={(event) => setDestYaw(event.target.value)} /></label>
@@ -120,8 +148,8 @@ export const TaskExecutionPanel: React.FC = () => {
         <div className="readout-label">AUTONOMOUS PICK / BOOK</div>
         <div className="readout-label">PICKUP POSE / DESTINATION</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-          <div className="task-coordinates">Pickup<br />X={simulatedObject.position.x.toFixed(3)} m<br />Y={simulatedObject.position.y.toFixed(3)} m<br />yaw={(simulatedObject.rotation.yaw * 180 / Math.PI).toFixed(1)}°</div>
-          <div className="task-coordinates">Destination<br />{dropTarget ? <>X={dropTarget.x.toFixed(3)} m<br />Y={dropTarget.y.toFixed(3)} m<br />yaw={dropTarget.yaw.toFixed(1)}°</> : 'Not declared'}</div>
+          <div className="task-coordinates">Pickup · {placementSurfaces.find((surface)=>surface.id===(simulatedObject.surfaceId??'table'))?.name??'Unknown surface'}<br />X={simulatedObject.position.x.toFixed(3)} m<br />Y={simulatedObject.position.y.toFixed(3)} m<br />yaw={(simulatedObject.rotation.yaw * 180 / Math.PI).toFixed(1)}°</div>
+          <div className="task-coordinates">Destination · {dropTarget ? placementSurfaces.find((surface)=>surface.id===(dropTarget.surfaceId??'table'))?.name??'Unknown surface' : 'Not declared'}<br />{dropTarget ? <>X={dropTarget.x.toFixed(3)} m<br />Y={dropTarget.y.toFixed(3)} m<br />yaw={dropTarget.yaw.toFixed(1)}°</> : 'Not declared'}</div>
         </div>
         <div className="readout-label">OBJECT WORLD</div>
         <div className="task-coordinates">
@@ -135,6 +163,7 @@ export const TaskExecutionPanel: React.FC = () => {
           Target EE: {graspWaypoint ? `X=${graspWaypoint.position.x.toFixed(3)} Y=${graspWaypoint.position.y.toFixed(3)} Z=${graspWaypoint.position.z.toFixed(3)} m` : 'Not planned'}
         </div>
         {autonomousPlan?.reachable && <div className="task-coordinates">Grip candidate: {autonomousPlan.graspCandidate} · close width {autonomousPlan.gripWidth.toFixed(3)} m</div>}
+        {autonomousPlan?.reachable && autonomousPlan.liftHeight !== undefined && <div className="task-coordinates">Transport lift height: {autonomousPlan.liftHeight.toFixed(3)} m</div>}
         <div className="paper-note">Wide-axis opening clearance: (0.130 − 0.012 − 0.100) / 2 = 0.009 m per side (9 mm; minimum 8 mm).</div>
         <div className="task-coordinates">
           Actual EE: X={fkResult.endEffectorPose.position.x.toFixed(3)} Y={fkResult.endEffectorPose.position.y.toFixed(3)} Z={fkResult.endEffectorPose.position.z.toFixed(3)} m
@@ -252,4 +281,75 @@ export const TaskExecutionPanel: React.FC = () => {
       </label>
     </section>
   );
+};
+
+const demoTargets = [
+  { label: 'TARGET A', x: 0.61, y: 0, yaw: 0 },
+  { label: 'TARGET B', x: 0.62, y: 0, yaw: 0 },
+  { label: 'TARGET C', x: 0.63, y: 0, yaw: 0 },
+];
+
+const ProfessorDemoPanel: React.FC<{ onDebug: () => void }> = ({ onDebug }) => {
+  const state = useThrottledSimulationSelector((s) => ({
+    simulatedObject: s.simulatedObject, dropTarget: s.dropTarget, pickStatus: s.pickStatus,
+    autonomousPlan: s.autonomousPlan, isTaskPlaying: s.isTaskPlaying, jointAngles: s.jointAngles, positionError:s.positionError,
+    fkResult: s.fkResult, dhTable: s.dhTable, setDropTarget: s.setDropTarget,
+    setBookYawDegrees: s.setBookYawDegrees, plan: s.planAutonomousPick,
+    execute: s.executeAutonomousPick, pause: s.pauseTask, reset: s.resetTask,
+    setTablePreset: s.setTablePreset, setPath: s.setShowPath,
+    destinationPickArmed: s.destinationPickArmed, setDestinationPickArmed: s.setDestinationPickArmed,
+  }));
+  const selectedTarget = state.dropTarget;
+  const controllerStatus = state.autonomousPlan?.reachable ? '✓ Target valid · trajectory planned'
+    : selectedTarget && !state.simulatedObject.reachability.reachable ? 'Target outside the verified workspace. Choose another target.'
+      : selectedTarget ? '✓ Target valid · ready to plan' : 'Select a target location.';
+  const loadDemo = (yaw: number, targetYaw: number) => {
+    state.setTablePreset('compact');
+    state.reset();
+    state.setBookYawDegrees(yaw);
+    state.setDestinationPickArmed(false);
+    state.setDropTarget({ ...demoTargets[0], y: targetYaw===90 ? -0.02 : demoTargets[0].y, yaw: targetYaw, surfaceId: 'table' });
+    state.setPath(true);
+    state.plan();
+  };
+  const resetDemo=()=>{state.reset();state.setDropTarget(null);state.setDestinationPickArmed(false);state.setPath(false);};
+  const ee = state.fkResult.endEffectorPose.position;
+  const release = state.autonomousPlan?.waypoints.find((waypoint) => waypoint.id === 'PLACE');
+  const targetEE = release?.position;
+  return <section className="control-panel professor-demo" aria-label="Robot controller">
+    <div className="panel-heading"><h2>ROBOT CONTROLLER</h2><button type="button" className="technical-button" onClick={onDebug}>DEBUG MODE</button></div>
+    <div className="readout-group"><div className="readout-label">OBJECT</div>
+      <div className="task-coordinates">X {state.simulatedObject.position.x.toFixed(3)} m · Y {state.simulatedObject.position.y.toFixed(3)} m · Z {state.simulatedObject.position.z.toFixed(4)} m<br/>Yaw {(state.simulatedObject.rotation.yaw * 180 / Math.PI).toFixed(1)}°</div>
+    </div>
+    <div className="readout-group"><div className="readout-label">VALID TARGET AREA · COMPACT TABLE</div>
+      <div className="task-buttons">{demoTargets.map((target) => <button key={target.label} type="button" disabled={state.isTaskPlaying} onClick={() => {state.setDestinationPickArmed(false);state.setDropTarget({ ...target, surfaceId: 'table' }, true);}}>{target.label}</button>)}</div>
+      <button type="button" className="technical-button" disabled={state.isTaskPlaying} onClick={() => state.setDestinationPickArmed(!state.destinationPickArmed)}>{state.destinationPickArmed ? 'CANCEL TARGET' : 'CUSTOM TARGET · CLICK TABLE'}</button>
+      {selectedTarget && <div className="task-coordinates">X {selectedTarget.x.toFixed(3)} m · Y {selectedTarget.y.toFixed(3)} m · Yaw {selectedTarget.yaw.toFixed(0)}°</div>}
+    </div>
+    <div className="error-readout" role="status">{controllerStatus}</div>
+    <div className="task-buttons">
+      <button type="button" disabled={!selectedTarget || !state.simulatedObject.reachability.reachable || state.isTaskPlaying} onClick={() => {state.setPath(true);state.plan();}}>PLAN</button>
+      <button type="button" disabled={!state.autonomousPlan?.reachable || state.isTaskPlaying} onClick={state.execute}>EXECUTE</button>
+      <button type="button" disabled={!state.isTaskPlaying} onClick={state.pause}>PAUSE</button>
+      <button type="button" disabled={state.isTaskPlaying} onClick={resetDemo}>RESET</button>
+    </div>
+    <div className="task-buttons">
+      <button type="button" disabled={state.isTaskPlaying} onClick={() => loadDemo(0, 0)}>DEMO PICK &amp; PLACE</button>
+      <button type="button" disabled={state.isTaskPlaying} onClick={() => loadDemo(45, 90)}>ROTATED DEMO · 45° → 90°</button>
+    </div>
+    <div className="task-coordinates">STATE: <b>{state.pickStatus}</b><br/>
+      TARGET EE: {targetEE ? `${targetEE.x.toFixed(3)}, ${targetEE.y.toFixed(3)}, ${targetEE.z.toFixed(3)} m` : 'Not planned'}<br/>
+      ACTUAL EE: {ee.x.toFixed(3)}, {ee.y.toFixed(3)}, {ee.z.toFixed(3)} m<br/>
+      POSITION ERROR: {state.positionError.toFixed(4)} m
+    </div>
+    <div className="readout-label">JOINTS · DEG</div>
+    <div className="task-coordinates">{state.jointAngles.map((angle, index) => `J${index + 1} ${(angle * 180 / Math.PI).toFixed(1)}°`).join(' · ')}</div>
+    {state.autonomousPlan?.reachable && <div className="task-coordinates">PLAN: IK solved · collision-free · grasp {state.autonomousPlan.graspCandidate} · {state.autonomousPlan.waypoints.length} trajectory waypoints</div>}
+  </section>;
+};
+
+export const TaskExecutionPanel: React.FC = () => {
+  const {debug,setDebug}=useThrottledSimulationSelector((s)=>({debug:s.debugMode,setDebug:s.setDebugMode}));
+  return debug ? <><button type="button" className="technical-button" onClick={() => setDebug(false)}>DEMO MODE</button><TaskExecutionPanelDebug /></>
+    : <ProfessorDemoPanel onDebug={() => setDebug(true)} />;
 };

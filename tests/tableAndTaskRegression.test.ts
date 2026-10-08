@@ -35,7 +35,7 @@ describe('table presets and task regressions', () => {
     const store=useSimulationStore.getState();store.setTablePreset('compact');store.resetTask();
     store.setDropTarget({x:.61,y:0,yaw:0});
     store.planAutonomousPick();
-    expect(useSimulationStore.getState().autonomousPlan?.reachable).toBe(true);
+    expect(useSimulationStore.getState().autonomousPlan?.reachable,useSimulationStore.getState().autonomousPlan?.reason).toBe(true);
     useSimulationStore.getState().setDropTarget({x:.62,y:0,yaw:0});
     expect(useSimulationStore.getState().autonomousPlan).toBeNull();
     expect(useSimulationStore.getState().taskPhase).toBe('IDLE');
@@ -51,9 +51,16 @@ describe('table presets and task regressions', () => {
     expect(TABLE.width).toBe(TABLE_PRESETS.compact.width);
     const computed=findDefaultPickPosition(store.dhTable,store.jointAngles,0);
     store.resetTask();
-    expect(store.simulatedObject.position).toEqual(computed);
+    expect(useSimulationStore.getState().simulatedObject.position).toEqual(computed);
     const pick=validatePickApproach(INITIAL_DH_TABLE,computed,HOME_JOINT_ANGLES,Math.PI/2);
     expect(pick.reachable).toBe(true);
+  });
+
+  it('reuses the exact measured Large HOME default returned by the full picker search', () => {
+    const store=useSimulationStore.getState();store.setTablePreset('large');
+    const cached=useSimulationStore.getState().simulatedObject.position;
+    const searched=findDefaultPickPosition(useSimulationStore.getState().dhTable,HOME_JOINT_ANGLES,0);
+    expect(cached).toEqual(searched);
   });
 
   it('completes and places the Predefined Task on Compact and Large presets without a destination', () => {
@@ -62,6 +69,7 @@ describe('table presets and task regressions', () => {
       expect(useSimulationStore.getState().dropTarget).toBeNull();
       store.playTask();
       const state=runToStop();
+      console.log(`PREDEFINED RESULT preset=${preset} phase=${state.taskPhase} object=${JSON.stringify(state.simulatedObject.position)} destination=none`);
       expect(state.taskPhase,`preset ${preset}: ${state.taskPhase}`).toBe('COMPLETE');
       expect(state.simulatedObject.state).toBe('placed');
       expect(state.simulatedObject.isAttached).toBe(false);

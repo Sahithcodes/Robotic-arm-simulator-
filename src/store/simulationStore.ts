@@ -1,12 +1,14 @@
 import { create } from 'zustand';
 import { AppTab, DHParameter, EulerAngles, FKResult, Vector3D } from '../types/robotics';
-import { INITIAL_DH_TABLE, PUMA_GEOMETRY, setTablePreset as applyTablePreset, TablePreset, TCP_OFFSET } from '../robot/robotConfig';
+import { INITIAL_DH_TABLE, PUMA_GEOMETRY, setTablePreset as applyTablePreset, TablePreset, TABLE_PRESETS, TCP_OFFSET } from '../robot/robotConfig';
 import { computeForwardKinematics } from '../robotics/forwardKinematics';
 import { transformPoint } from '../robotics/inverseKinematics';
 import { heldBookCollision } from '../robotics/heldObjectCollision';
 import { degToRad, rpyToMatrix } from '../robotics/transforms';
-import { clampObjectToTable, chooseGraspCandidate, createPickPlan, DropTarget, findDefaultPickPosition, findNearestPickablePosition, findNearestValidDestination, PickPlan, validatePickApproach } from '../robotics/autonomousPlanner';
+import { clampObjectToTable, createPickPlan, DropTarget, findDefaultPickPosition, findNearestPickablePosition, findNearestValidDestination, PickPlan, validatePickApproach } from '../robotics/autonomousPlanner';
 import { SimulatedObject } from '../types/robotics';
+import { evaluatePickabilityCached } from '../robotics/pickabilityGrid';
+import { PlacementSurface, PlacementSurfaceShape, defaultPlacementSurfaces, validateSurfaceSet, surfaceBookZ } from '../robotics/placementSurfaces';
 import {
   BOOK,
   GRIPPER,
@@ -24,9 +26,16 @@ import {
 } from '../robotics/task5';
 
 interface SimulationState {
+  debugMode: boolean;
+  setDebugMode: (enabled: boolean) => void;
   simulatorMode: 'manual' | 'predefined' | 'autonomous';
   setSimulatorMode: (mode: 'manual' | 'predefined' | 'autonomous') => void;
   tablePreset: TablePreset;
+  placementSurfaces: PlacementSurface[];
+  surfaceEditError: string | null;
+  updatePlacementSurface: (id: string, patch: Partial<PlacementSurface>) => void;
+  addPlacementSurface: (shape?:PlacementSurfaceShape) => void;
+  removePlacementSurface: (id: string) => void;
   setTablePreset: (preset: TablePreset) => void;
   // Navigation
   activeTab: AppTab;
@@ -54,6 +63,8 @@ interface SimulationState {
   graspDebugLog: { stage: string; tcp: Vector3D; bookCenter: Vector3D; fingerGap: number }[];
   showJointLabels: boolean;
   showGraspRegion: boolean;
+  showReachabilityOverlay: boolean;
+  showPerformanceDebug: boolean;
   showPath: boolean;
   taskMode: 'predefined' | 'autonomous';
   autonomousPhase: TaskPhase;
@@ -66,12 +77,12 @@ interface SimulationState {
   simulatedObject: SimulatedObject;
   autonomousPlan: PickPlan | null;
   dropTarget: DropTarget | null;
-  setDropTarget: (target: DropTarget | null, snap?: boolean) => void;
+  setDropTarget: (target: DropTarget | null, snap?: boolean, preview?: boolean) => void;
   allowUnreachablePlacement: boolean;
   setAllowUnreachablePlacement: (enabled: boolean) => void;
   destinationPickArmed: boolean;
   setDestinationPickArmed: (armed: boolean) => void;
-  setBookPosition: (position: { x: number; y: number; z: number }) => void;
+  setBookPosition: (position: { x: number; y: number; z: number }, surfaceId?: string) => void;
   setBookYawDegrees: (yawDegrees: number) => void;
   setObjectDragging: (dragging: boolean) => void;
   setObjectSelected: (selected: boolean) => void;
@@ -93,6 +104,8 @@ interface SimulationState {
   setShowGraspDebug: (enabled: boolean) => void;
   setShowJointLabels: (enabled: boolean) => void;
   setShowGraspRegion: (enabled: boolean) => void;
+  setShowReachabilityOverlay: (enabled: boolean) => void;
+  setShowPerformanceDebug: (enabled: boolean) => void;
   setShowPath: (enabled: boolean) => void;
 }
 
@@ -100,9 +113,23 @@ const defaultAngles = HOME_JOINT_ANGLES;
 const initialFK = computeForwardKinematics(INITIAL_DH_TABLE, defaultAngles);
 const initialTaskWaypoints = buildTask5JointWaypoints(INITIAL_DH_TABLE);
 const initialPickability = validatePickApproach(INITIAL_DH_TABLE, BOOK.initialPosition, defaultAngles, Math.PI / 2);
-const GRASP_TOLERANCE = 0.035;
+const GRASP_TOLERANCE = 0.005;
 const END_EFFECTOR_TOLERANCE = 0.018;
 const AUTONOMOUS_SEGMENT_SECONDS = 1.5;
+// These are the exact results of findDefaultPickPosition for the fixed DH table at HOME.
+// Reusing those measured results avoids a synchronous planner search during preset changes.
+const HOME_DEFAULT_POSES = {
+  compact: { x: 0.7950000000000002, y: -0.035000000000000024, z: BOOK.initialPosition.z },
+  large: { x: 0.7950000000000004, y: -0.044999999999999984, z: BOOK.initialPosition.z },
+};
+const dhFingerprint = (dh: DHParameter[]) => dh.map((p) => [p.a,p.alpha,p.d,p.theta,p.thetaMin,p.thetaMax].join(',')).join(';');
+const homeDhFingerprint = dhFingerprint(INITIAL_DH_TABLE);
+function defaultPickPose(dh: DHParameter[], angles: number[], preset: TablePreset) {
+  const atHome = angles.length === HOME_JOINT_ANGLES.length && angles.every((angle,index)=>Math.abs(angle-HOME_JOINT_ANGLES[index])<1e-9);
+  if(atHome && dhFingerprint(dh)===homeDhFingerprint&&Math.abs(TABLE.height-TABLE_PRESETS[preset].height)<1e-9) return { ...HOME_DEFAULT_POSES[preset],z:BOOK.initialPosition.z };
+  // Non-HOME poses use the same center-aligned TCP search as execution.
+  return findDefaultPickPosition(dh,angles,0);
+}
 
 function graspDebugEntry(stage: string, fk: FKResult, object: SimulatedObject, gripperOpen: boolean, closeWidth = BOOK.size.y) {
   return {
@@ -133,15 +160,40 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
   simulatorMode: 'manual',
   setSimulatorMode: (mode) => set((state) => ({ simulatorMode: mode, taskMode: mode === 'autonomous' ? 'autonomous' : 'predefined', simulatedObject: mode === 'predefined' && !state.isTaskPlaying ? { ...state.simulatedObject, position: { ...PREDEFINED_BOOK_POSITION }, rotation: { roll: 0, pitch: 0, yaw: 0 }, graspState: 'on-table', state: 'onTable', isAttached: false, isGrasped: false } : state.simulatedObject })),
   tablePreset: 'compact',
+  placementSurfaces: defaultPlacementSurfaces().filter((surface) => surface.id === 'table'),
+  surfaceEditError: null,
+  updatePlacementSurface: (id, patch) => set((state) => {
+    const oldTable=state.placementSurfaces.find((surface)=>surface.id==='table');
+    const next=state.placementSurfaces.map((surface)=>{
+      if(surface.id===id)return {...surface,...patch,center:patch.center?{...surface.center,...patch.center}:surface.center,size:patch.size?{...surface.size,...patch.size}:surface.size};
+      if(id==='table'&&oldTable){const dx=(patch.center?.x??oldTable.center.x)-oldTable.center.x,dy=(patch.center?.y??oldTable.center.y)-oldTable.center.y,z=patch.z??oldTable.z;
+        if(surface.id==='tray')return {...surface,center:{x:surface.center.x+dx,y:surface.center.y+dy,z:0},z};
+        if(surface.id==='raised-platform'&&patch.z!==undefined&&Math.abs(surface.z-(oldTable.z+.15))<1e-8)return {...surface,z:z+.15};
+        if(surface.id==='lower-platform'&&patch.z!==undefined&&Math.abs(surface.z-(oldTable.z-.15))<1e-8)return {...surface,z:z-.15};
+      }
+      return surface;
+    });
+    const error=validateSurfaceSet(next);
+    if(!error&&id==='table'){const table=next.find((surface)=>surface.id==='table')!;TABLE.center.x=table.center.x;TABLE.center.y=table.center.y;TABLE.width=table.size.width;TABLE.depth=table.size.depth;TABLE.height=table.z;BOOK.initialPosition.z=table.z+BOOK.size.z/2;}
+    return error?{surfaceEditError:error}:{placementSurfaces:next,surfaceEditError:null,autonomousPlan:null,simulatedObject:state.simulatedObject.surfaceId==='table'&&!state.isHoldingBook?{...state.simulatedObject,position:{...state.simulatedObject.position,z:next.find((surface)=>surface.id==='table')!.z+BOOK.size.z/2}}:state.simulatedObject};
+  }),
+  addPlacementSurface: (shape='rectangle') => set((state) => {
+    const n=state.placementSurfaces.length;
+    const surface:PlacementSurface={id:`custom-${n}`,name:`Surface ${n}`,shape,center:{x:.3,y:.45+n*.25,z:0},yaw:0,z:.78,size:shape==='rectangle'?{width:.24,depth:.18}:{width:.4,depth:.4,innerRadius:.06,outerRadius:.2,startAngle:0,endAngle:Math.PI},support:{type:shape==='rectangle'?'legs':'column',width:.025,depth:.025,radius:.035,height:.735},color:'#718096'};
+    const next=[...state.placementSurfaces,surface],error=validateSurfaceSet(next);
+    return error?{surfaceEditError:error}:{placementSurfaces:next,surfaceEditError:null,autonomousPlan:null};
+  }),
+  removePlacementSurface: (id) => set((state) => ({placementSurfaces:state.placementSurfaces.filter((surface)=>surface.id!==id),dropTarget:state.dropTarget?.surfaceId===id?null:state.dropTarget,simulatedObject:state.simulatedObject.surfaceId===id?{...state.simulatedObject,surfaceId:'table',position:{...state.simulatedObject.position,z:surfaceBookZ(state.placementSurfaces.find((surface)=>surface.id==='table')!)} }:state.simulatedObject,surfaceEditError:null,autonomousPlan:null})),
   setTablePreset: (preset) => {
     const state = get();
     if (state.isTaskPlaying) return;
     applyTablePreset(preset);
-    const defaultPose = findDefaultPickPosition(state.dhTable, state.jointAngles, 0);
+    const defaultPose = defaultPickPose(state.dhTable, state.jointAngles, preset);
     Object.assign(BOOK.initialPosition, defaultPose);
-    set({ tablePreset: preset, dropTarget: null, autonomousPlan: null, taskPhase: 'IDLE', autonomousPhase: 'IDLE', pickStatus: 'IDLE', simulatedObject: { ...state.simulatedObject, position: { ...defaultPose }, rotation: { roll: 0, pitch: 0, yaw: 0 }, reachability: { reachable: true, reason: 'Reachable' }, state: 'onTable', graspState: 'on-table', isAttached: false, isGrasped: false } });
+    const surfaces=[{...defaultPlacementSurfaces()[0],center:{...TABLE.center},z:TABLE.height,size:{width:TABLE.width,depth:TABLE.depth}}];
+    set({ tablePreset: preset, placementSurfaces:surfaces, showReachabilityOverlay: false, dropTarget: null, autonomousPlan: null, taskPhase: 'IDLE', autonomousPhase: 'IDLE', pickStatus: 'IDLE', simulatedObject: { ...state.simulatedObject, position: { ...defaultPose },surfaceId:'table', rotation: { roll: 0, pitch: 0, yaw: 0 }, reachability: { reachable: true, reason: 'Reachable' }, state: 'onTable', graspState: 'on-table', isAttached: false, isGrasped: false } });
   },
-  activeTab: 'robot',
+  activeTab: 'task',
   setActiveTab: (tab) => set({ activeTab: tab }),
 
   jointAngles: defaultAngles,
@@ -162,6 +214,10 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
   graspDebugLog: [],
   showJointLabels: false,
   showGraspRegion: false,
+  debugMode: false,
+  setDebugMode: (enabled) => set({debugMode:enabled}),
+  showReachabilityOverlay: false,
+  showPerformanceDebug: false,
   showPath: true,
   taskMode: 'predefined',
   autonomousPhase: 'IDLE',
@@ -172,7 +228,7 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
   heldObjectLocalOffset: TCP_OFFSET,
   heldRotationOffset: { roll: 0, pitch: 0, yaw: 0 },
   simulatedObject: {
-    id: 'book-1', type: 'book', position: BOOK.initialPosition,
+    id: 'book-1', type: 'book', position: BOOK.initialPosition, surfaceId:'table',
     rotation: { roll: 0, pitch: 0, yaw: 0 }, dimensions: BOOK.size,
     graspState: 'on-table', state: 'onTable', isSelected: false, isBeingDragged: false, isGrasped: false, isAttached: false,
     reachability: { reachable: initialPickability.reachable, reason: initialPickability.reason },
@@ -184,25 +240,34 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
   destinationPickArmed: false,
   setDestinationPickArmed: (armed) => set({ destinationPickArmed: armed }),
 
-  setDropTarget: (target, snap = false) => {
+  setDropTarget: (target, snap = false, preview = false) => {
     const state = get();
     if (state.isTaskPlaying) return;
-    const requested = target ? { x: target.x, y: target.y, yaw: target.yaw } : null;
-    const snapped = requested && snap && !state.allowUnreachablePlacement
+    const requestedSurface=state.placementSurfaces.find((surface)=>surface.id===(target?.surfaceId??'table'));
+    const requested = target ? { x: target.x, y: target.y, yaw: target.yaw, surfaceId: target.surfaceId ?? 'table', z: target.z??(requestedSurface?surfaceBookZ(requestedSurface):undefined) } : null;
+    const snapped = requested && snap && !state.allowUnreachablePlacement && requested.surfaceId==='table'
       ? findNearestValidDestination(state.dhTable, state.jointAngles, state.simulatedObject.position, state.simulatedObject.rotation.yaw, requested, degToRad(requested.yaw))
       : null;
+    if(requested&&snap&&!state.allowUnreachablePlacement&&requested.surfaceId==='table'&&!snapped){
+      set({pickStatus:'No verified target near that position'});
+      return;
+    }
     const normalized = requested ? { ...requested, ...(snapped ?? {}) } : null;
+    if(preview){
+      set({dropTarget:normalized,autonomousPlan:null,simulatedObject:{...state.simulatedObject,reachability:{reachable:false,reason:'Release marker to validate destination'}}});
+      return;
+    }
     const destination = normalized ? { ...normalized, yaw: degToRad(normalized.yaw) } : null;
-    const plan = destination ? createPickPlan(state.dhTable, state.simulatedObject.position, state.jointAngles, destination, state.simulatedObject.rotation.yaw) : null;
+    const plan = destination ? createPickPlan(state.dhTable, state.simulatedObject.position, state.jointAngles, destination, state.simulatedObject.rotation.yaw, true, state.placementSurfaces,state.simulatedObject.surfaceId??'table') : null;
     const pick = destination ? null : validatePickApproach(state.dhTable, state.simulatedObject.position, state.jointAngles, state.simulatedObject.rotation.yaw + Math.PI / 2);
     set({ dropTarget: normalized, autonomousPlan: null, taskPhase: 'IDLE', autonomousPhase: 'IDLE', pickStatus: 'IDLE', simulatedObject: { ...state.simulatedObject, reachability: { reachable: plan?.reachable ?? pick!.reachable, reason: plan?.reason ?? pick!.reason } } });
   },
 
-  setBookPosition: (position) => {
+  setBookPosition: (position, surfaceId) => {
     const state = get();
     if (state.isHoldingBook || state.isTaskPlaying) return;
     set({
-      simulatedObject: { ...state.simulatedObject, position, graspState: 'on-table', state: 'onTable', isGrasped: false, isAttached: false, reachability: { reachable: false, reason: 'Position changed; plan again' } },
+      simulatedObject: { ...state.simulatedObject, position, surfaceId:surfaceId??state.simulatedObject.surfaceId??'table', graspState: 'on-table', state: 'onTable', isGrasped: false, isAttached: false, reachability: { reachable: false, reason: 'Position changed; plan again' } },
       autonomousPlan: null,
       isTaskPlaying: false,
       taskPhase: 'IDLE', autonomousPhase: 'IDLE', pickStatus: 'IDLE',
@@ -213,7 +278,7 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
     const state = get();
     if (state.isTaskPlaying) return;
     const rotation = { ...state.simulatedObject.rotation, yaw: degToRad(yawDegrees) };
-    const plan = state.dropTarget ? createPickPlan(state.dhTable, state.simulatedObject.position, state.jointAngles, { ...state.dropTarget, yaw: degToRad(state.dropTarget.yaw) }, rotation.yaw) : null;
+    const plan = state.dropTarget ? createPickPlan(state.dhTable, state.simulatedObject.position, state.jointAngles, { ...state.dropTarget, yaw: degToRad(state.dropTarget.yaw) }, rotation.yaw, true, state.placementSurfaces,state.simulatedObject.surfaceId??'table') : null;
     const pick = state.dropTarget ? null : validatePickApproach(state.dhTable, state.simulatedObject.position, state.jointAngles, rotation.yaw + Math.PI / 2);
     set({ autonomousPlan: null, taskPhase: 'IDLE', autonomousPhase: 'IDLE', pickStatus: 'IDLE', simulatedObject: { ...state.simulatedObject, rotation, reachability: { reachable: plan?.reachable ?? pick!.reachable, reason: plan?.reason ?? pick!.reason } } });
   },
@@ -231,18 +296,18 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
     const position = !state.allowUnreachablePlacement ? findNearestPickablePosition(state.dhTable, state.jointAngles, state.simulatedObject.position, state.simulatedObject.rotation.yaw, state.dropTarget ? { ...state.dropTarget, yaw: degToRad(state.dropTarget.yaw) } : null) : state.simulatedObject.position;
     const object = { ...state.simulatedObject, position };
     if (!state.dropTarget) {
-      const pick = chooseGraspCandidate(state.dhTable, position, state.jointAngles, state.simulatedObject.rotation.yaw);
-      set({ autonomousPlan: null, simulatedObject: { ...object, reachability: { reachable: !!pick, reason: pick ? 'Reachable' : 'Book orientation not reachable here at any wrist angle' } } });
+      const pick = evaluatePickabilityCached({ preset:state.tablePreset,dhTable:state.dhTable,jointAngles:state.jointAngles,yawRad:state.simulatedObject.rotation.yaw,bookZ:position.z }, position.x, position.y);
+      set({ autonomousPlan: null, simulatedObject: { ...object, reachability: { reachable: pick.reachable, reason: pick.reason } } });
       return;
     }
-    const plan = createPickPlan(state.dhTable, position, state.jointAngles, { ...state.dropTarget, yaw: degToRad(state.dropTarget.yaw) }, state.simulatedObject.rotation.yaw);
+    const plan = createPickPlan(state.dhTable, position, state.jointAngles, { ...state.dropTarget, yaw: degToRad(state.dropTarget.yaw) }, state.simulatedObject.rotation.yaw, true, state.placementSurfaces,state.simulatedObject.surfaceId??'table');
     set({ autonomousPlan: plan, simulatedObject: { ...object, reachability: { reachable: plan.reachable, reason: plan.reason } } });
   },
 
   planAutonomousPick: () => {
     const state = get();
     if (!state.dropTarget) { set({ autonomousPlan: null, pickStatus: 'Set a destination (click the table or type X/Y)', taskPhase: 'IDLE', autonomousPhase: 'IDLE' }); return; }
-    const plan = createPickPlan(state.dhTable, state.simulatedObject.position, state.jointAngles, { ...state.dropTarget, yaw: degToRad(state.dropTarget.yaw) }, state.simulatedObject.rotation.yaw);
+    const plan = createPickPlan(state.dhTable, state.simulatedObject.position, state.jointAngles, { ...state.dropTarget, yaw: degToRad(state.dropTarget.yaw) }, state.simulatedObject.rotation.yaw, true, state.placementSurfaces,state.simulatedObject.surfaceId??'table');
     set({
       taskMode: 'autonomous', simulatorMode: 'autonomous', autonomousPlan: plan, gripperCloseWidth: plan.gripWidth, isTaskPlaying: false,
       taskPhase: plan.reachable ? 'PLANNED' : 'UNREACHABLE', trajectoryTime: 0,
@@ -413,10 +478,10 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
         set({ isTaskPlaying: false, taskPhase: 'ERROR', autonomousPhase: 'ERROR', pickStatus: 'FAILED: Missing retreat waypoint' });
         return;
       }
-      if (index === 1 && state.pickStatus === 'OPEN') set({ pickStatus: 'DESCEND' });
-      if (index === 2 && state.pickStatus === 'ATTACH') set({ pickStatus: 'LIFT' });
-      if (index === 5 && state.pickStatus === 'RELEASE') set({ pickStatus: 'RETREAT' });
-      if (index === 1 && state.pickStatus === 'VERIFY') {
+      if (waypoint.id === 'GRASP' && state.pickStatus === 'OPEN') set({ pickStatus: 'DESCEND' });
+      if (waypoint.id === 'LIFT' && state.pickStatus === 'ATTACH') set({ pickStatus: 'LIFT' });
+      if (waypoint.id === 'RETREAT' && state.pickStatus === 'RELEASE') set({ pickStatus: 'RETREAT' });
+      if (waypoint.id === 'GRASP' && state.pickStatus === 'VERIFY') {
         const contactError = distance(state.fkResult.tcpPose.position, state.simulatedObject.position);
         if (contactError > GRASP_TOLERANCE) {
           set({ isTaskPlaying: false, taskPhase: 'ERROR', autonomousPhase: 'ERROR', pickStatus: `FAILED: alignment error ${contactError.toFixed(3)} m`, positionError: contactError });
@@ -425,7 +490,7 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
         }
         return;
       }
-      if (index === 1 && state.pickStatus === 'CLOSE') {
+      if (waypoint.id === 'GRASP' && state.pickStatus === 'CLOSE') {
         const fk = state.fkResult;
         const worldOffset = {
           x: state.simulatedObject.position.x - fk.endEffectorPose.position.x,
@@ -454,7 +519,7 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
       const eeError = distance(fk.endEffectorPose.position, waypoint.position);
       const targetFk = computeForwardKinematics(state.dhTable, waypoint.jointAngles);
       const yawTrackingError = Math.abs(Math.atan2(Math.sin(fk.endEffectorPose.orientation.yaw - targetFk.endEffectorPose.orientation.yaw), Math.cos(fk.endEffectorPose.orientation.yaw - targetFk.endEffectorPose.orientation.yaw)));
-      const reached = index === 1 || index === 4 ? eeError <= 0.0015 && yawTrackingError <= degToRad(0.1) : eeError <= END_EFFECTOR_TOLERANCE;
+      const reached = waypoint.id === 'GRASP' || waypoint.id === 'PLACE' ? eeError <= 0.0015 && yawTrackingError <= degToRad(0.1) : eeError <= END_EFFECTOR_TOLERANCE;
       const baseUpdate = {
         jointAngles: angles,
         fkResult: fk,
@@ -468,19 +533,21 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
         return;
       }
 
-      if (reached && index === 1) {
+      if (reached && waypoint.id === 'GRASP') {
         set({ ...baseUpdate, pickStatus: 'VERIFY' });
         return;
       }
 
-      if (reached && index === 4) {
+      if (reached && waypoint.id === 'PLACE') {
         const releasePositionRaw = transformPoint(fk.endEffectorPose.rotationMatrix, state.heldObjectLocalOffset);
         const releaseRotation = addEuler(fk.endEffectorPose.orientation, state.heldRotationOffset);
         const releaseMatrix = rpyToMatrix(releaseRotation.roll, releaseRotation.pitch, releaseRotation.yaw);
         const releaseHalfBottom = Math.abs(releaseMatrix[8]) * BOOK.size.x / 2 + Math.abs(releaseMatrix[9]) * BOOK.size.y / 2 + Math.abs(releaseMatrix[10]) * BOOK.size.z / 2;
-        const releasePosition = { ...releasePositionRaw, z: Math.max(releasePositionRaw.z, TABLE.height + releaseHalfBottom + 1e-6) };
         const target = state.dropTarget;
-        const declaredPose = target ? { x: target.x, y: target.y, z: TABLE.height + BOOK.size.z / 2 } : null;
+        const targetSurface=state.placementSurfaces.find((surface)=>surface.id===(target?.surfaceId??'table'));
+        const targetZ=target?.z??(targetSurface?surfaceBookZ(targetSurface):NaN);
+        const releasePosition = { ...releasePositionRaw, z: Math.max(releasePositionRaw.z, targetZ + releaseHalfBottom - BOOK.size.z/2 + 1e-6) };
+        const declaredPose = target ? { x: target.x, y: target.y, z: targetZ } : null;
         const releaseError = declaredPose ? distance(releasePosition, declaredPose) : Infinity;
         const yawError = target ? Math.abs(Math.atan2(Math.sin(state.simulatedObject.rotation.yaw - degToRad(target.yaw)), Math.cos(state.simulatedObject.rotation.yaw - degToRad(target.yaw)))) : Infinity;
         if (!declaredPose || releaseError > 0.005 || yawError > degToRad(2)) {
@@ -501,6 +568,7 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
             ...state.simulatedObject, position: declaredPose!,
             rotation: { ...state.simulatedObject.rotation, yaw: degToRad(target!.yaw), roll: 0, pitch: 0 },
             graspState: 'on-table', state: 'placed', isGrasped: false, isAttached: false,
+            surfaceId: target?.surfaceId ?? 'table',
           },
         });
         return;
@@ -514,17 +582,18 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
 
       if (reached) {
         const nextIndex = index + 1;
-        const nextPhase: TaskPhase = nextIndex === 1 ? 'MOVING TO GRASP'
-          : nextIndex === 2 ? 'LIFTING'
-            : nextIndex === 3 ? 'MOVING TO TARGET'
-          : nextIndex === 4 ? 'LOWERING TO TARGET' : 'MOVING TO HOME';
+        const nextWaypoint=plan.waypoints[nextIndex];
+        const nextPhase: TaskPhase = nextWaypoint?.id==='GRASP'?'MOVING TO GRASP'
+          : nextWaypoint?.id==='LIFT'?'LIFTING'
+            : nextWaypoint?.id==='PLACE'?'LOWERING TO TARGET'
+              : nextWaypoint?.id==='RETREAT'?'MOVING TO HOME':'MOVING TO TARGET';
         set({
           ...baseUpdate,
           autonomousWaypointIndex: nextIndex,
           autonomousSegmentElapsed: 0,
           autonomousStartAngles: [...angles],
           autonomousPhase: nextPhase,
-          pickStatus: nextIndex === 1 ? 'OPEN' : nextIndex === 2 ? 'LIFT' : nextIndex === 3 ? 'TRANSPORT' : nextIndex === 4 ? 'LOWER' : 'RETREAT',
+          pickStatus: nextWaypoint?.id === 'GRASP' ? 'OPEN' : nextWaypoint?.id === 'LIFT' ? 'LIFT' : nextWaypoint?.id === 'PRE-PLACE' ? 'TRANSPORT' : nextWaypoint?.id === 'PLACE' ? 'LOWER' : nextWaypoint?.id === 'RETREAT' ? 'RETREAT' : 'TRANSPORT',
           taskPhase: nextPhase,
         });
         return;
@@ -537,10 +606,11 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
       if (state.isHoldingBook && state.autonomousPhase === 'LOWERING TO TARGET') {
         const rotation = rpyToMatrix(heldRotation.roll, heldRotation.pitch, heldRotation.yaw);
         const halfBottom = Math.abs(rotation[8]) * BOOK.size.x / 2 + Math.abs(rotation[9]) * BOOK.size.y / 2 + Math.abs(rotation[10]) * BOOK.size.z / 2;
-        if (heldPosition.z - halfBottom < TABLE.height + 1e-6) heldPosition = { ...heldPosition, z: TABLE.height + halfBottom + 1e-6 };
+        const targetSurface=state.placementSurfaces.find((surface)=>surface.id===(state.dropTarget?.surfaceId??'table'));
+        if (targetSurface && heldPosition.z - halfBottom < targetSurface.z + (targetSurface.tray?.floorThickness??0) + 1e-6) heldPosition = { ...heldPosition, z: targetSurface.z + (targetSurface.tray?.floorThickness??0) + halfBottom + 1e-6 };
       }
       if (state.isHoldingBook && ['LIFTING', 'MOVING TO TARGET', 'LOWERING TO TARGET'].includes(state.autonomousPhase)) {
-        const collision = heldBookCollision(heldPosition, heldRotation);
+        const collision = heldBookCollision(heldPosition, heldRotation,state.placementSurfaces,state.autonomousPhase==='LOWERING TO TARGET'?state.dropTarget?.surfaceId:undefined);
         if (collision) {
           set({ ...baseUpdate, isTaskPlaying: false, isHoldingBook: false, isGripperOpen: true, taskPhase: 'ERROR', autonomousPhase: 'ERROR', pickStatus: `FAILED: ${collision.kind} (${(collision.penetrationM*1000).toFixed(1)} mm)`, simulatedObject: { ...state.simulatedObject, position: heldPosition, rotation: heldRotation, graspState: 'on-table', state: 'onTable', isAttached: false, isGrasped: false } });
           return;
@@ -630,5 +700,7 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
   setShowGraspDebug: (enabled) => set({ showGraspDebug: enabled }),
   setShowJointLabels: (enabled) => set({ showJointLabels: enabled }),
   setShowGraspRegion: (enabled) => set({ showGraspRegion: enabled }),
+  setShowReachabilityOverlay: (enabled) => set({ showReachabilityOverlay: enabled }),
+  setShowPerformanceDebug: (enabled) => set({ showPerformanceDebug: enabled }),
   setShowPath: (enabled) => set({ showPath: enabled }),
 }));

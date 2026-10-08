@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useSimulationStore } from '../../store/simulationStore';
 import { Matrix4x4 } from '../../types/robotics';
+import { useThrottledSimulationSelector } from '../../store/useThrottledSimulationSelector';
 
 export const MatrixDisplay: React.FC = () => {
-  const { fkResult } = useSimulationStore();
+  const fkResult = useThrottledSimulationSelector((s) => s.fkResult);
   const [selectedMatrix, setSelectedMatrix] = useState<string>('T06');
 
   const renderMatrix = (m: Matrix4x4) => {

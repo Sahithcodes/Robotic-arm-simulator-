@@ -31,6 +31,7 @@ export type SimulatedObject = {
   isGrasped: boolean;
   isAttached: boolean;
   reachability: { reachable: boolean; reason: string };
+  surfaceId?: string;
 };
 
 /** Orientation angles in Roll-Pitch-Yaw (rad or deg) */

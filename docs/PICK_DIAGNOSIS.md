@@ -61,3 +61,65 @@ A complete post-change seven-yaw grid sweep has not been run, so post-change cel
 ## Geometry guardrails
 
 The arm uses DH dimensions d1=0.70, l2=0.43, l3=0.37, d4=d5=0, d6=0.10 m. Tool length remains 0.075 m. Joint limits remain J1 [-170,170], J2 [-225,45], J3 [-216,90], J4 [-110,170], J5 [-100,100], J6 [-266,266] degrees. The book is 0.100 x 0.080 x 0.025 m. Collision thresholds and table mesh remain unchanged.
+
+## Large-table overlay performance
+
+### Baseline profile
+
+The baseline overlay recomputed a 1 cm grid on the main thread, evaluating cells in groups of two from `requestAnimationFrame`. The measured host profile used the same `evaluatePickabilityCell` function and 2-cell batch size:
+
+| Preset | Grid cells | Cell evaluations | Full pick-sequence validations | Recompute time | Longest synchronous 2-cell batch |
+|---|---:|---:|---:|---:|---:|
+| Compact | 680 | 680 | 220 | 2,769.2 ms | 182.025 ms |
+| Large | 2,400 | 2,400 | 3,100 | 141,084.0 ms | 1,085.171 ms |
+
+Each cell evaluation calls the pickability evaluator; cells that fit the planner bounds try candidate grasps, each of which invokes a full pick-sequence validation. The overlay does not invoke `createPickPlan` for every cell. It invokes `createPickPlan` only for explicit destination and drag validation.
+
+Before this change, the overlay rendered as one mesh and one draw call, with one `MeshBasicMaterial`. Its `BufferGeometry` contained four vertices and six indices for every reachable cell. The mesh already ignored pointer rays. Rendering thousands of per-cell meshes was not the cause of the freeze.
+
+The frame loop called `tickTask` once per rendered frame. That wrote joint angles, FK results, trajectory progress, and object pose into Zustand on each running frame. Scene, task, joint, telemetry, and kinematics components used broad store subscriptions, so they could all render on those writes. The task/debug log copied its array on stage changes, not on every animation frame. No JSON copy occurred per frame. `useFrame` itself did not allocate Three.js `Vector3` or `Matrix4` objects; it did call FK code that builds ordinary JavaScript arrays and objects. React rendering the robot from new FK props constructed Three.js vectors, quaternions, and matrices on those frames.
+
+The renderer used R3F's default always-running frame loop, antialiasing, enabled shadow maps, and the device pixel ratio without a cap. A browser render count, draw-call count from WebGL, and actual GPU shadow/pixel costs could not be captured in the available environment.
+
+### Changes
+
+- Reachability computation now uses `pickability.worker.ts`, which calls the same pickability and planner functions as the main thread. It sends cell state and reason codes in transferred `Uint8Array` chunks. Jobs are cancelled on relevant configuration changes or component unmount.
+- The worker sends a 3 cm grid first, then the 1 cm grid. The main thread paints each completed stage to one canvas texture on one table-plane mesh, with raycasting disabled. This is one mesh, one material, and one draw call, independent of reachable-cell count.
+- Large starts with the overlay off. The viewport's `PICK OVERLAY` toggle starts computation only while the scene is mounted and the sequence is idle. Changes debounce by 300 ms. The 1 cm cell under a released drag is checked on demand through a bounded memory cache.
+- In-memory grid cache keys include preset, table dimensions, DH fingerprint, tool length, book dimensions, yaw rounded to one degree, joint angles, and book height. The generated `sweep.json` has no configuration hash and uses a different full-plan destination sweep, so it is ignored for overlay reuse.
+- The exact HOME default poses returned by the existing planner search are cached for both built-in table presets when the DH table and home joints match. This avoids the measured 179 ms Large preset-switch search without changing that search's result. Non-home/custom configurations still use the original search.
+- Canvas pixel ratio is capped at 1.5 with antialiasing retained. Large disables shadow maps; Compact retains them. Task, joint, telemetry, and kinematics panels now observe selected store values and refresh at up to 10 Hz. The main layout and tab bar subscribe only to their needed fields.
+- The `PERF` viewport toggle displays FPS, Scene renders per 100 animation frames, overlay grid size, time to first overlay paint, time to full resolution, worker compute time, and the longest measured main-thread worker-message handler.
+
+### Verification and measurement limits
+
+`pickabilityWorker.test.ts` compares worker-side encoded success/reason results with main-thread results on 200 deterministic random cells; both agree. Cache-key tests confirm invalidation when preset, yaw, or book dimensions change. `tableAndTaskRegression.test.ts` checks that the cached Large HOME pose exactly equals a fresh run of the original planner search.
+
+The browser-specific after measurements—Large longest main-thread block, 3 cm time to first paint, 1 cm completion time, FPS, and React Scene render count over 100 live frames—could not be recorded here because no browser runtime or browser automation is available. The viewport `PERF` readout measures these in the running app. Main-thread worker-message handling is instrumented around typed-array copies and texture creation; planner work itself runs in the worker. The baseline measurements above are from the Node/Vitest host and are not a substitute for browser timing.
+
+## Placement surfaces
+
+`placementSurfaces.ts` defines rectangle and annular-sector surfaces, preset surfaces, resting-height calculation, surface footprint checks, overlap rejection, and ray selection. The store keeps a list of surfaces and a surface ID for the object and destination. The Task panel can edit surface height and floor position, add rectangle or annular-sector surfaces, and remove non-Table surfaces. Scene picking checks all surface planes and assigns the nearest hit. Each visible surface gets a single worker-backed overlay mesh. Changing surface geometry invalidates overlay cache keys and the active plan.
+
+The default configuration contains Table, Raised platform, Lower platform, Shelf, Tray on table, and Floor. The tray has 40 mm walls and a 4 mm floor. The fixed Predefined Task waypoints and declared book pose were not changed. A transport lift waypoint is inserted when another surface footprint overlaps the XY corridor; its target height is exposed on the panel. Surface collision checks cover link samples, finger boxes, support legs/columns, and held-book bounds. The intended surface top is skipped only for its placement descent/release.
+
+### Default-surface reachability sample
+
+The following Node/Vitest sample used a 3 cm grid, yaw zero, the real planner, HOME joints, and the default book as the start pose for placeability. Percentages are among grid points whose book footprint fits. This coarse grid is an estimate; the browser worker refines reports to 1 cm.
+
+| Surface | Valid sample cells | Pickable area | Placeable area |
+|---|---:|---:|---:|
+| Table | 21 | 0.0% | 0.0% |
+| Raised platform | 6 | 100.0% | 16.7% |
+| Lower platform | 6 | 16.7% | 0.0% |
+| Shelf | 18 | 100.0% | 0.0% |
+| Tray on table | 0 | 0.0% | 0.0% |
+| Floor | 21 | 0.0% | 0.0% |
+
+The 3 cm grid misses the small set of valid tray centers, so its tray percentage is not a usable estimate. Floor was checked separately on its full 1 cm grid: **0 of 220 valid cells were pickable (0.0%)**. The planner reports `outside workspace`; the panel labels it “Not reachable with this arm.”
+
+The Table surface is 0.780 m, so the book resting center is 0.7925 m. The previous planner reused the 25 mm arm-link clearance plane (0.805 m) for the finger-axis collision check; at the resting pose it reported a false collision with 2.739 mm penetration. The collision thresholds remain unchanged: links retain 25 mm clearance, and finger geometry is checked against the physical 0.780 m surface. The calibrated TCP is 0.00458 m above the surface (0.78458 m), producing 3.00 mm minimum finger-box clearance and 22.00 mm book-side overlap in the measured Compact grasp. The height calibration and existing 3x3 headless execution tests pass.
+
+### Verification status
+
+`placementSurfaces.test.ts` checks default configuration overlap, resting-height formulas, nearest-surface ray selection, cache-key changes on surface motion/height, store plan invalidation, coarse reachability estimates, and the Floor reason/count. Existing Predefined Task tests remain in the suite. Randomized 20-pair headless completion for every non-Floor surface and a successful obstacle reroute have not passed; representative cross-surface plans currently fail for surface collisions, wrist limits, or base collisions. No browser visual or interaction test was available.
