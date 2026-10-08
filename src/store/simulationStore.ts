@@ -171,8 +171,8 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
       return surface;
     });
     const error=validateSurfaceSet(next);
-    if(!error&&id==='table'){const table=next.find((surface)=>surface.id==='table')!;TABLE.center.x=table.center.x;TABLE.center.y=table.center.y;TABLE.width=table.size.width;TABLE.depth=table.size.depth;TABLE.height=table.z;BOOK.initialPosition.z=table.z+TABLE.topThickness/2+BOOK.size.z/2;}
-    return error?{surfaceEditError:error}:{placementSurfaces:next,surfaceEditError:null,autonomousPlan:null,simulatedObject:state.simulatedObject.surfaceId==='table'&&!state.isHoldingBook?{...state.simulatedObject,position:{...state.simulatedObject.position,z:next.find((surface)=>surface.id==='table')!.z+TABLE.topThickness/2+BOOK.size.z/2}}:state.simulatedObject};
+    if(!error&&id==='table'){const table=next.find((surface)=>surface.id==='table')!;TABLE.center.x=table.center.x;TABLE.center.y=table.center.y;TABLE.width=table.size.width;TABLE.depth=table.size.depth;TABLE.height=table.z;BOOK.initialPosition.z=table.z+BOOK.size.z/2;}
+    return error?{surfaceEditError:error}:{placementSurfaces:next,surfaceEditError:null,autonomousPlan:null,simulatedObject:state.simulatedObject.surfaceId==='table'&&!state.isHoldingBook?{...state.simulatedObject,position:{...state.simulatedObject.position,z:next.find((surface)=>surface.id==='table')!.z+BOOK.size.z/2}}:state.simulatedObject};
   }),
   addPlacementSurface: (shape='rectangle') => set((state) => {
     const n=state.placementSurfaces.length;

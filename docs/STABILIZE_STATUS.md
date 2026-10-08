@@ -1,7 +1,7 @@
 # Stabilization status
 
 - **PASS — Step 1, evidence #1:** `npm run build` succeeded; `npm run dev` served `/` with HTTP 200 and a 10,101-byte response; Task panel + viewport SSR smoke test passed (1 test). The red toast was not reproduced. Added viewport/panel ErrorBoundaries and a copyable global Errors box.
-- **NOT STARTED — Step 2, evidence #0:** Height source of truth and resting-height grasp clearance proof.
+- **PASS — Step 2, evidence #2:** Compact Table top `0.7800 m`, book center `0.7925 m`. Geometry audit found the tool axis incorrectly tested against the arm-link clearance plane at `0.805 m` (false penetration `2.739 mm` at `0.802261 m`). The arm link plane still enforces 25 mm; tool contact now checks the real tabletop. Printed grasp proof: TCP `0.7846 m`, finger-box clearance `3.00 mm`, book-side overlap `22.00 mm`. Planner + headless execution + height tests: 10 passed, including 3×3 pickup positions.
 - **NOT STARTED — Step 3, evidence #0:** Predefined Task headless completion.
 - **NOT STARTED — Step 4, evidence #0:** 5 × 13 × 7 rotated yaw matrix.
 - **NOT STARTED — Step 5, evidence #0:** Unified candidate-coupled pick and place planning.
@@ -25,3 +25,4 @@
 
 1. `npm run build`: exit 0; Next.js compiled, type checked, and generated all static pages. `npm run dev`: port 3000 was occupied, server selected 3001; `node fetch` of `/` returned HTTP 200. Dev log contained successful compilation and `GET / 200`, no errors.
 2. `npm run lint` exit 0; `npm test -- --run src/components/layout/ssrSmoke.test.tsx`: 1 test passed.
+3. `npm test -- --run src/robotics/__tests__/heightCalibration.test.ts tests/autonomousExecution.test.ts tests/autonomousPlanner.test.ts`: 3 files, 10 tests passed. The height test printed all measured values listed in checklist evidence #2.

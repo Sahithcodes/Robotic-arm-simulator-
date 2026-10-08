@@ -15,15 +15,21 @@ export type DropTarget={x:number;y:number;yaw:number;surfaceId?:string;z?:number
 export type GraspCandidate={name:string;toolYaw:number;width:number};
 function canonicalBookYaw(yaw:number){return Math.atan2(Math.sin(2*yaw),Math.cos(2*yaw))/2;}
 const MARGIN=.012, TABLE_MARGIN=.025;
+// The finger tips stop 3 mm above the actual support top. On a 25 mm book
+// resting there, this gives 22 mm of vertical overlap with its side faces.
+export const GRASP_TCP_SURFACE_CLEARANCE = 0.00458;
+function surfaceTcpZ(surface:PlacementSurface){return surfaceBookZ(surface)-BOOK.size.z/2+GRASP_TCP_SURFACE_CLEARANCE;}
 function objectHalfExtents(yaw:number){const c=Math.abs(Math.cos(yaw)),s=Math.abs(Math.sin(yaw));return {x:c*BOOK.size.x/2+s*BOOK.size.y/2,y:s*BOOK.size.x/2+c*BOOK.size.y/2};}
 function inBounds(p:Vector3D,yaw=0){const ext=objectHalfExtents(yaw);return Math.abs(p.x-TABLE.center.x)<=TABLE.width/2-ext.x-MARGIN+1e-9&&Math.abs(p.y-TABLE.center.y)<=TABLE.depth/2-ext.y-MARGIN+1e-9;}
 export function isInsideBaseKeepOut(p:Vector3D){return Math.hypot(p.x-ROBOT_BASE_KEEP_OUT.center.x,p.y-ROBOT_BASE_KEEP_OUT.center.y)<ROBOT_BASE_KEEP_OUT.radius+Math.hypot(BOOK.size.x/2,BOOK.size.y/2);}
 export function isValidObjectPosition(p:Vector3D,yaw=0){return inBounds(p,yaw)&&!isInsideBaseKeepOut(p)&&Math.abs(p.z-BOOK.initialPosition.z)<.015;}
 export function validatePickSequence(dh:DHParameter[],position:Vector3D,current:number[],toolYaw:number,surfaces:PlacementSurface[]=[defaultTableSurface()],surfaceId='table'){
  let q=[...current],previous=[...current];
- for(const target of [{p:{...position,z:position.z+.14},contact:false},{p:position,contact:true},{p:{...position,z:position.z+.18},contact:false}]){
-  const solved=solvePose(dh,target.p,toolYaw,q,degToRad(30),0,surfaces,target.contact?surfaceId:undefined);if(!solved.ik)return {reachable:false,reason:solved.reason};
-  const collision=pathCollision(dh,previous,solved.ik.angles,target.contact,false,surfaces,target.contact?surfaceId:undefined);if(collision)return {reachable:false,reason:collision.kind};
+ const surface=surfaces.find((candidate)=>candidate.id===surfaceId)??defaultTableSurface();
+ const grasp={...position,z:surfaceTcpZ(surface)};
+ for(const target of [{p:{...grasp,z:grasp.z+.14},contact:false},{p:grasp,contact:true},{p:{...grasp,z:grasp.z+.18},contact:false}]){
+  const solved=solvePose(dh,target.p,toolYaw,q,degToRad(30),0,surfaces,target.contact?surfaceId:undefined);if(!solved.ik)return {reachable:false,reason:solved.reason,diagnostics:solved.diagnostics};
+  const collision=pathCollision(dh,previous,solved.ik.angles,target.contact,false,surfaces,target.contact?surfaceId:undefined);if(collision)return {reachable:false,reason:collision.kind,collision};
   q=solved.ik.angles;previous=q;
  }
  return {reachable:true,reason:'Reachable'};
@@ -44,10 +50,10 @@ function axisTilt(fk:ReturnType<typeof computeForwardKinematics>){const m=fk.end
 const LINK_NAMES=['base-to-shoulder','upper-arm','forearm','wrist-1','wrist-2','tool-flange'];
 type Collision={kind:string;linkName:string;otherPrimitive:string;penetrationMm:number;sampleZMm:number;jointAngles?:number[]};
 function hitsPedestal(dh:DHParameter[],q:number[]):Collision|null{const p=computeForwardKinematics(dh,q).jointPositions;for(let i=2;i<p.length;i++){const a=p[i-1],b=p[i],radius=i===2?.045:i===3?.04:i===4?.03:.025;for(let s=0;s<=20;s++){const t=s/20,z=a.z+(b.z-a.z)*t;if(z<ROBOT_MOUNT_HEIGHT||z>ROBOT_PEDESTAL.collisionTop)continue;const x=a.x+(b.x-a.x)*t-ROBOT_BASE_KEEP_OUT.center.x,y=a.y+(b.y-a.y)*t-ROBOT_BASE_KEEP_OUT.center.y,dist=Math.hypot(x,y),penetration=ROBOT_PEDESTAL.columnRadius+radius-dist;if(penetration>0)return {kind:'link-vs-base collision',linkName:LINK_NAMES[i-1]??`link-${i}`,otherPrimitive:'pedestal-column-cylinder (center=(0,0,z=590 mm); radius=95 mm; height=620 mm; z=280–900 mm)',penetrationMm:penetration*1000,sampleZMm:z*1000};}}return null;}
-function tableClear(dh:DHParameter[],q:number[],allowContact=false,allowToolContact=false):Collision|null{const fk=computeForwardKinematics(dh,q),p=fk.jointPositions;const xmin=TABLE.center.x-TABLE.width/2,xmax=TABLE.center.x+TABLE.width/2,ymin=TABLE.center.y-TABLE.depth/2,ymax=TABLE.center.y+TABLE.depth/2,clearance=allowContact?-.005:TABLE_MARGIN,planeZ=TABLE.height+clearance,primitiveName=`table-top-clearance-plane (size=${(TABLE.width*1000).toFixed(0)}x${(TABLE.depth*1000).toFixed(0)} mm; center=(${(TABLE.center.x*1000).toFixed(0)},${(TABLE.center.y*1000).toFixed(0)}) mm; z=${(planeZ*1000).toFixed(0)} mm; ${(clearance*1000).toFixed(0)} mm offset from tabletop)`;
+function tableClear(dh:DHParameter[],q:number[],allowContact=false,allowToolContact=false):Collision|null{const fk=computeForwardKinematics(dh,q),p=fk.jointPositions;const xmin=TABLE.center.x-TABLE.width/2,xmax=TABLE.center.x+TABLE.width/2,ymin=TABLE.center.y-TABLE.depth/2,ymax=TABLE.center.y+TABLE.depth/2,planeZ=TABLE.height+TABLE_MARGIN,primitiveName=`table-link-clearance-plane (size=${(TABLE.width*1000).toFixed(0)}x${(TABLE.depth*1000).toFixed(0)} mm; center=(${(TABLE.center.x*1000).toFixed(0)},${(TABLE.center.y*1000).toFixed(0)}) mm; z=${(planeZ*1000).toFixed(0)} mm; 25 mm link clearance above tabletop)`;
  for(let i=1;i<p.length;i++){const a=p[i-1],b=p[i];for(let s=0;s<=10;s++){const t=s/10,x=a.x+(b.x-a.x)*t,y=a.y+(b.y-a.y)*t,z=a.z+(b.z-a.z)*t,penetration=planeZ-z;if(x>=xmin&&x<=xmax&&y>=ymin&&y<=ymax&&penetration>0)return {kind:'collision with table',linkName:LINK_NAMES[i-1]??`link-${i}`,otherPrimitive:primitiveName,penetrationMm:penetration*1000,sampleZMm:z*1000};}}
  // Sample the complete finger segment in its world orientation.
- if(!allowToolContact){const m=fk.endEffectorPose.rotationMatrix;for(let s=0;s<=12;s++){const z=TCP_OFFSET.z*s/12;const x=fk.endEffectorPose.position.x+m[2]*z,y=fk.endEffectorPose.position.y+m[6]*z,w=fk.endEffectorPose.position.z+m[10]*z,penetration=planeZ-w;if(x>=xmin&&x<=xmax&&y>=ymin&&y<=ymax&&penetration>0)return {kind:'collision with table',linkName:'tool/finger-axis centerline',otherPrimitive:primitiveName,penetrationMm:penetration*1000,sampleZMm:w*1000};}}
+ if(!allowToolContact){const m=fk.endEffectorPose.rotationMatrix,toolPlaneZ=TABLE.height,toolPrimitive=`tabletop-surface (z=${(toolPlaneZ*1000).toFixed(0)} mm)`;for(let s=0;s<=12;s++){const z=TCP_OFFSET.z*s/12;const x=fk.endEffectorPose.position.x+m[2]*z,y=fk.endEffectorPose.position.y+m[6]*z,w=fk.endEffectorPose.position.z+m[10]*z,penetration=toolPlaneZ-w;if(x>=xmin&&x<=xmax&&y>=ymin&&y<=ymax&&penetration>0)return {kind:'collision with table',linkName:'tool/finger-axis centerline',otherPrimitive:toolPrimitive,penetrationMm:penetration*1000,sampleZMm:w*1000};}}
  return null;}
 function extraSurfaceCollision(dh:DHParameter[],q:number[],surfaces:PlacementSurface[],allowedSurfaceId?:string):Collision|null {
  const fk=computeForwardKinematics(dh,q),points=fk.jointPositions,fingers=getFingerBoxCorners(fk,GRIPPER.openWidth);
@@ -121,7 +127,8 @@ export function createPickPlan(dh:DHParameter[],objectPosition:Vector3D,currentA
  const chosen=chooseGraspCandidate(dh,objectPosition,currentAngles,yaw,undefined,surfaces,sourceSurface.id);
  if(!chosen)return fail('GRASP','Book orientation not reachable here at any wrist angle');
  const placeToolYaw=destination.yaw+(chosen.toolYaw-canonicalBookYaw(yaw));
- const targets:{id:string;p:Vector3D;contact:boolean;yaw:number}[]=[{id:'PRE-GRASP',p:{...objectPosition,z:objectPosition.z+.14},contact:false,yaw:chosen.toolYaw},{id:'GRASP',p:objectPosition,contact:true,yaw:chosen.toolYaw},{id:'LIFT',p:{...objectPosition,z:objectPosition.z+.18},contact:false,yaw:chosen.toolYaw},{id:'PRE-PLACE',p:{...place,z:place.z+.14},contact:false,yaw:placeToolYaw},{id:'PLACE',p:place,contact:true,yaw:placeToolYaw},{id:'RETREAT',p:{...place,z:place.z+.18},contact:false,yaw:placeToolYaw}];
+ const graspTcp={...objectPosition,z:surfaceTcpZ(sourceSurface)},placeTcp={...place,z:surfaceTcpZ(targetSurface)};
+ const targets:{id:string;p:Vector3D;contact:boolean;yaw:number}[]=[{id:'PRE-GRASP',p:{...graspTcp,z:graspTcp.z+.14},contact:false,yaw:chosen.toolYaw},{id:'GRASP',p:graspTcp,contact:true,yaw:chosen.toolYaw},{id:'LIFT',p:{...graspTcp,z:graspTcp.z+.18},contact:false,yaw:chosen.toolYaw},{id:'PRE-PLACE',p:{...placeTcp,z:placeTcp.z+.14},contact:false,yaw:placeToolYaw},{id:'PLACE',p:placeTcp,contact:true,yaw:placeToolYaw},{id:'RETREAT',p:{...placeTcp,z:placeTcp.z+.20},contact:false,yaw:placeToolYaw}];
  const corridor={minX:Math.min(objectPosition.x,place.x),maxX:Math.max(objectPosition.x,place.x),minY:Math.min(objectPosition.y,place.y),maxY:Math.max(objectPosition.y,place.y)};
  const between=surfaces.filter((s)=>s.id!==sourceSurface.id&&s.id!==targetSurface.id&&s.center.x+s.size.width/2>=corridor.minX&&s.center.x-s.size.width/2<=corridor.maxX&&s.center.y+s.size.depth/2>=corridor.minY&&s.center.y-s.size.depth/2<=corridor.maxY);
  let liftHeight:number|undefined;
@@ -180,4 +187,4 @@ export function findDefaultPickPosition(dh:DHParameter[],currentAngles:number[],
 }
 export function computePickableZone(dh:DHParameter[],currentAngles:number[],yawSamples=[0],step=.08){const zone:Vector3D[]=[];const x0=TABLE.center.x-TABLE.width/2+BOOK.size.x/2+MARGIN,x1=TABLE.center.x+TABLE.width/2-BOOK.size.x/2-MARGIN,y0=TABLE.center.y-TABLE.depth/2+BOOK.size.y/2+MARGIN,y1=TABLE.center.y+TABLE.depth/2-BOOK.size.y/2-MARGIN;for(let x=x0;x<=x1+1e-6;x+=step)for(let y=y0;y<=y1+1e-6;y+=step){const p={x,y,z:BOOK.initialPosition.z};if(isInsideBaseKeepOut(p))continue;if(yawSamples.every(yaw=>solvePose(dh,p,yaw+(BOOK.size.y<BOOK.size.x?Math.PI/2:0),currentAngles,degToRad(30)).ik))zone.push(p);}return zone;}
 
-Object.assign(BOOK.initialPosition, {x:0.8150000000000002,y:-0.08500000000000002,z:TABLE.height+TABLE.topThickness/2+BOOK.size.z/2});
+Object.assign(BOOK.initialPosition, {x:0.8150000000000002,y:-0.08500000000000002,z:TABLE.height+BOOK.size.z/2});

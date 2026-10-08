@@ -118,7 +118,7 @@ The following Node/Vitest sample used a 3 cm grid, yaw zero, the real planner, H
 
 The 3 cm grid misses the small set of valid tray centers, so its tray percentage is not a usable estimate. Floor was checked separately on its full 1 cm grid: **0 of 220 valid cells were pickable (0.0%)**. The planner reports `outside workspace`; the panel labels it “Not reachable with this arm.”
 
-The table result exposes an existing height inconsistency: the modeled Table surface is at 0.780 m, so the required resting center is 0.7925 m, while the legacy default pick pose is 0.815 m. The current planner rejects a book-center grasp at 0.7925 m with `collision with table`. Collision clearance was not relaxed. As a result, dragging the book onto the modeled Table plane and cross-surface completion from the requested resting height remain unverified and are currently blocked by this planner/surface mismatch. The reported successful baseline autonomous test uses the legacy 0.815 m start height.
+The Table surface is 0.780 m, so the book resting center is 0.7925 m. The previous planner reused the 25 mm arm-link clearance plane (0.805 m) for the finger-axis collision check; at the resting pose it reported a false collision with 2.739 mm penetration. The collision thresholds remain unchanged: links retain 25 mm clearance, and finger geometry is checked against the physical 0.780 m surface. The calibrated TCP is 0.00458 m above the surface (0.78458 m), producing 3.00 mm minimum finger-box clearance and 22.00 mm book-side overlap in the measured Compact grasp. The height calibration and existing 3x3 headless execution tests pass.
 
 ### Verification status
 

@@ -81,11 +81,11 @@ export const ORIENTATION_TOLERANCE = 0.35;
 
 export const TABLE = TABLE_GEOMETRY;
 
-export const PREDEFINED_BOOK_POSITION = { x: 0.68, y: -0.04, z: TABLE_PRESETS.compact.height + TABLE_PRESETS.compact.topThickness / 2 + 0.025 / 2 };
+export const PREDEFINED_BOOK_POSITION = { x: 0.68, y: -0.04, z: TABLE_PRESETS.compact.height + 0.025 / 2 };
 
 export const BOOK = {
   size: { x: 0.1, y: 0.08, z: 0.025 },
-  initialPosition: { x: TABLE_PRESETS.compact.center.x - 0.03, y: TABLE_PRESETS.compact.center.y, z: TABLE_PRESETS.compact.height + TABLE_PRESETS.compact.topThickness / 2 + 0.025 / 2 },
+  initialPosition: { x: TABLE_PRESETS.compact.center.x - 0.03, y: TABLE_PRESETS.compact.center.y, z: TABLE_PRESETS.compact.height + 0.025 / 2 },
 };
 
 export const GRIPPER = {
