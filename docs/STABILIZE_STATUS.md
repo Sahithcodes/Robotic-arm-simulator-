@@ -6,7 +6,7 @@
 - **PASS — Step 4, evidence #8:** `npm run verify` acceptance row C tested the full 5 positions × 13 book yaws × 7 destination yaws (455 cases). The planner rejected 325 combinations as `Book footprint is off Table`; every one of the 130 planner-valid combinations reached DONE, with strict release yaw error under 2° (printed worst `0.000°`). Destination yaws were `0,45,90,135,180,30,91°`. Strict 2° release checking remains enabled; the mesh has not been proven 180° symmetric.
 - **PASS — Step 5, evidence #6:** `planPickAndPlace` is the sole complete-plan function through the `createPickPlan` compatibility export; it searches the shared narrow / flipped / wide / flipped candidate list and retains one candidate across grasp, transport, and place. The worker place overlay calls the same complete planner. `npm test -- --run src/robotics/__tests__/unifiedPickPlacePlanner.test.ts src/robotics/__tests__/heightCalibration.test.ts` passed 2 tests; printed `overlay=Reachable candidate=narrow axis waypoints=PRE-GRASP,GRASP,LIFT,PRE-PLACE,PLACE,RETREAT residual=1.434 mm` and finger clearance `12.40 mm`, side overlap `12.60 mm`. `npm run lint` passed. Reset-pose edge failure was fixed by selecting a pose within the center-aligned grasp workspace; its focused regression passed 3 tests.
 - **PASS — Step 6, evidence #7:** Runtime scene and table-preset reset now contain only Table at `0.7800 m`; the panel labels any added non-table surface experimental. The worker overlay and its cache remain in place. `npm test -- --run src/robotics/__tests__/sceneSurfaceDefaults.test.ts src/robotics/__tests__/placementSurfaces.test.ts -t "starts and resets|invalidates"` passed 2 tests and printed `surfaces=Table tableTop=0.7800 m`; lint passed. Non-table transport/reachability remains unverified and is experimental/off by default. Prior 3 cm surface sweep evidence #5 showed 0% placeable for every default non-table preset, so none is enabled.
-- **PASS — Step 7, evidence #8:** `npm run verify` passed: lint; default Vitest suite (22 files, 75 passed, 1 skipped); production build; acceptance suite (8 passed). Acceptance printed A-G. Compact B: seed `202013383`, 50/50 valid planned cases DONE, worst release-position error `1.574 mm`, yaw error `0.000°`, lowest book bottom `0.78000 m`; fixture yield 6.9%. C: 130/130 valid cases DONE. D: non-table surfaces disabled/experimental. E: obstacle case refused before transport with `joint limit at PRE-GRASP` (not an obstacle-specific collision diagnosis). F SSR and headless console capture passed. G reported 10/20 Large plans accepted; report only.
+- **PASS — Step 7, evidence #9:** Final `npm run verify` passed after adding sampled finger-box/table collision checks: lint; default Vitest (22 files, 75 passed, 1 skipped); production build; acceptance suite (8 passed). Acceptance A-G printed; B completed 50/50 planner-valid pairs (seed `202013383`, 1.574 mm worst release-position error, 0.000° yaw error, book bottom never below `0.78000 m`, broad fixture yield 6.9%); C completed all 130 planner-valid cases from the 455-case matrix; D remains experimental/off; E refused before transport at PRE-GRASP for a joint limit; F SSR and headless console capture passed; G reports 10/20 Large plans accepted only.
 
 ## Step 1 error audit
 
@@ -31,17 +31,18 @@
 6. `npm test -- --run src/robotics/__tests__/unifiedPickPlacePlanner.test.ts src/robotics/__tests__/heightCalibration.test.ts`: 2 tests passed; the complete worker place-overlay plan and execution plan selected the same candidate and produced the same six waypoints. `npm run lint` passed. `npm test -- --run tests/tableAndTaskRegression.test.ts -t "resets plan|Large HOME|computed Compact default"`: 3 tests passed.
 7. `npm test -- --run src/robotics/__tests__/sceneSurfaceDefaults.test.ts src/robotics/__tests__/placementSurfaces.test.ts -t "starts and resets|invalidates"`: 2 tests passed; runtime contains Table only at `0.7800 m`. `npm run lint` passed.
 8. `npm run verify`: exit 0. Lint passed; default suite reported 22 files, 75 passed and 1 skipped; Next production build passed; `test:acceptance` reported 8 tests passed. Printed acceptance values are recorded in the Step 7 checklist line. The Vite CJS deprecation notice is tooling output, not an application warning.
+9. `npm run verify` repeated after adding finger-box/table checks to sampled poses: exit 0 with 22 default test files (75 passed, 1 skipped), successful production build, and 8 acceptance tests passed. `heightCalibration.test.ts` printed 12.40 mm finger-box clearance and 12.60 mm side overlap; 20 headless Compact runs printed `20/20`.
 
 ## Step 7 acceptance results
 
 | Row | Status | Evidence at this checkpoint |
 |---|---|---|
-| A. Predefined Task DONE, Compact | PASS | Evidence #8: `COMPLETE`, placed, no destination. |
-| B. Compact random pairs | PASS | Evidence #8: 50/50 planner-valid seeded cases completed; fixture yield 6.9%, each rejected sample has a reason. |
-| C. Rotated proof | PASS | Evidence #8: 130/130 planner-valid matrix cases DONE; 325 cases outside footprint. |
-| D. Table ↔ Raised transport | PASS — experimental | Evidence #8: not certified; surfaces disabled by default. |
-| E. Obstacle reroute/refusal | PASS — limited | Evidence #8: refused before transport for PRE-GRASP joint limit; no obstacle-specific collision refusal was shown. |
-| F. SSR + headless console | PASS | Evidence #8: panel/viewport SSR and no application console.error/warn during headless run. Browser runtime remains unverified. |
-| G. Large preset, 20 plans | PASS — report only | Evidence #8: 10 planned, 10 rejected; no Large execution acceptance claim. |
+| A. Predefined Task DONE, Compact | PASS | Evidence #9: `COMPLETE`, placed, no destination. |
+| B. Compact random pairs | PASS | Evidence #9: 50/50 planner-valid seeded cases completed; fixture yield 6.9%, each rejected sample has a reason. |
+| C. Rotated proof | PASS | Evidence #9: 130/130 planner-valid matrix cases DONE; 325 cases outside footprint. |
+| D. Table ↔ Raised transport | PASS — experimental | Evidence #9: not certified; surfaces disabled by default. |
+| E. Obstacle reroute/refusal | PASS — limited | Evidence #9: refused before transport for PRE-GRASP joint limit; no obstacle-specific collision refusal was shown. |
+| F. SSR + headless console | PASS | Evidence #9: panel/viewport SSR and no application console.error/warn during headless run. Browser runtime remains unverified. |
+| G. Large preset, 20 plans | PASS — report only | Evidence #9: 10 planned, 10 rejected; no Large execution acceptance claim. |
 
 `npm run verify` runs lint, default Vitest, production build, then the acceptance suite. Current branch is `stabilize`; Steps 5–7 are committed separately. No browser was available for visual or runtime verification.
