@@ -51,7 +51,7 @@ describe('table presets and task regressions', () => {
     expect(TABLE.width).toBe(TABLE_PRESETS.compact.width);
     const computed=findDefaultPickPosition(store.dhTable,store.jointAngles,0);
     store.resetTask();
-    expect(store.simulatedObject.position).toEqual(computed);
+    expect(useSimulationStore.getState().simulatedObject.position).toEqual(computed);
     const pick=validatePickApproach(INITIAL_DH_TABLE,computed,HOME_JOINT_ANGLES,Math.PI/2);
     expect(pick.reachable).toBe(true);
   });

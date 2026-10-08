@@ -208,4 +208,4 @@ export function findDefaultPickPosition(dh:DHParameter[],currentAngles:number[],
 }
 export function computePickableZone(dh:DHParameter[],currentAngles:number[],yawSamples=[0],step=.08){const zone:Vector3D[]=[];const x0=TABLE.center.x-TABLE.width/2+BOOK.size.x/2+MARGIN,x1=TABLE.center.x+TABLE.width/2-BOOK.size.x/2-MARGIN,y0=TABLE.center.y-TABLE.depth/2+BOOK.size.y/2+MARGIN,y1=TABLE.center.y+TABLE.depth/2-BOOK.size.y/2-MARGIN;for(let x=x0;x<=x1+1e-6;x+=step)for(let y=y0;y<=y1+1e-6;y+=step){const p={x,y,z:BOOK.initialPosition.z};if(isInsideBaseKeepOut(p))continue;if(yawSamples.every(yaw=>solvePose(dh,p,yaw+(BOOK.size.y<BOOK.size.x?Math.PI/2:0),currentAngles,degToRad(30)).ik))zone.push(p);}return zone;}
 
-Object.assign(BOOK.initialPosition, {x:0.80,y:-0.04,z:TABLE.height+BOOK.size.z/2});
+Object.assign(BOOK.initialPosition, {x:0.7950000000000002,y:-0.035000000000000024,z:TABLE.height+BOOK.size.z/2});

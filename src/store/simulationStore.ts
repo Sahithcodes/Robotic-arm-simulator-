@@ -117,14 +117,15 @@ const AUTONOMOUS_SEGMENT_SECONDS = 1.5;
 // These are the exact results of findDefaultPickPosition for the fixed DH table at HOME.
 // Reusing those measured results avoids a synchronous planner search during preset changes.
 const HOME_DEFAULT_POSES = {
-  compact: { x: 0.8150000000000002, y: -0.08500000000000002, z: BOOK.initialPosition.z },
-  large: { x: 0.8350000000000004, y: -0.14499999999999996, z: BOOK.initialPosition.z },
+  compact: { x: 0.7950000000000002, y: -0.035000000000000024, z: BOOK.initialPosition.z },
+  large: { x: 0.7950000000000004, y: -0.044999999999999984, z: BOOK.initialPosition.z },
 };
 const dhFingerprint = (dh: DHParameter[]) => dh.map((p) => [p.a,p.alpha,p.d,p.theta,p.thetaMin,p.thetaMax].join(',')).join(';');
 const homeDhFingerprint = dhFingerprint(INITIAL_DH_TABLE);
 function defaultPickPose(dh: DHParameter[], angles: number[], preset: TablePreset) {
-  // Re-search using the same center-aligned TCP target as the execution plan.
-  // Historical cached poses were measured for a lower, misaligned grasp datum.
+  const atHome = angles.length === HOME_JOINT_ANGLES.length && angles.every((angle,index)=>Math.abs(angle-HOME_JOINT_ANGLES[index])<1e-9);
+  if(atHome && dhFingerprint(dh)===homeDhFingerprint&&Math.abs(TABLE.height-TABLE_PRESETS[preset].height)<1e-9) return { ...HOME_DEFAULT_POSES[preset],z:BOOK.initialPosition.z };
+  // Non-HOME poses use the same center-aligned TCP search as execution.
   return findDefaultPickPosition(dh,angles,0);
 }
 
