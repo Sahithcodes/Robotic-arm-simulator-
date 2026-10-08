@@ -14,6 +14,7 @@ export type PickabilityCell={position:Vector3D;fits:boolean;reachable:boolean;re
 export type DropTarget={x:number;y:number;yaw:number;surfaceId?:string;z?:number};
 export type GraspCandidate={name:string;toolYaw:number;width:number};
 function canonicalBookYaw(yaw:number){return Math.atan2(Math.sin(2*yaw),Math.cos(2*yaw))/2;}
+function wrapYaw(yaw:number){return Math.atan2(Math.sin(yaw),Math.cos(yaw));}
 const MARGIN=.012, TABLE_MARGIN=.025;
 // The finger tips stop 3 mm above the actual support top. On a 25 mm book
 // resting there, this gives 22 mm of vertical overlap with its side faces.
@@ -126,7 +127,9 @@ export function createPickPlan(dh:DHParameter[],objectPosition:Vector3D,currentA
  if(distanceToShoulder-TCP_OFFSET.z>PUMA_GEOMETRY.l2+PUMA_GEOMETRY.l3)return fail('PRE-GRASP','outside workspace',[{stage:'PRE-GRASP',kind:'outside workspace',linkName:null,otherPrimitive:null,penetrationMm:null,jointAngles:null,tiltDeg:null,ikSeedUsed:null}]);
  const chosen=chooseGraspCandidate(dh,objectPosition,currentAngles,yaw,undefined,surfaces,sourceSurface.id);
  if(!chosen)return fail('GRASP','Book orientation not reachable here at any wrist angle');
- const placeToolYaw=destination.yaw+(chosen.toolYaw-canonicalBookYaw(yaw));
+ // Preserve the declared book-to-tool rotation from grasp through release.
+ const relativeBookYaw=wrapYaw(yaw-chosen.toolYaw);
+ const placeToolYaw=wrapYaw(destination.yaw-relativeBookYaw);
  const graspTcp={...objectPosition,z:surfaceTcpZ(sourceSurface)},placeTcp={...place,z:surfaceTcpZ(targetSurface)};
  const targets:{id:string;p:Vector3D;contact:boolean;yaw:number}[]=[{id:'PRE-GRASP',p:{...graspTcp,z:graspTcp.z+.14},contact:false,yaw:chosen.toolYaw},{id:'GRASP',p:graspTcp,contact:true,yaw:chosen.toolYaw},{id:'LIFT',p:{...graspTcp,z:graspTcp.z+.18},contact:false,yaw:chosen.toolYaw},{id:'PRE-PLACE',p:{...placeTcp,z:placeTcp.z+.14},contact:false,yaw:placeToolYaw},{id:'PLACE',p:placeTcp,contact:true,yaw:placeToolYaw},{id:'RETREAT',p:{...placeTcp,z:placeTcp.z+.20},contact:false,yaw:placeToolYaw}];
  const corridor={minX:Math.min(objectPosition.x,place.x),maxX:Math.max(objectPosition.x,place.x),minY:Math.min(objectPosition.y,place.y),maxY:Math.max(objectPosition.y,place.y)};
