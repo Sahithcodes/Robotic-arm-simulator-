@@ -61,6 +61,7 @@
 
 11. `npm test -- --run src/robotics/__tests__/professorDemo.test.ts src/robotics/__tests__/demoWorkspace.test.ts src/components/layout/ssrSmoke.test.tsx src/robotics/__tests__/sceneSurfaceDefaults.test.ts` — 4 files, 5 passed; `npm run lint` exit 0. Workspace and both professor-demo traces printed above. Browser automation capability query returned no browser/Playwright tool.
 12. `npm run verify` — exit 0; lint passed, default suite 24 files / 78 passed / 1 skipped, Next production build passed, acceptance suite 8 passed. `npm test -- --run src/robotics/__tests__/professorDemo.test.ts` — 1 file / 2 tests passed. Dev server `npm run dev -- --port 3015`, Node `fetch('/')` — HTTP 200, 8,219 response bytes; log `GET / 200`, no runtime error. Browser visual verification remains unavailable.
+13. Target-marker drag performance fix: `npm test -- --run src/robotics/__tests__/demoWorkspace.test.ts src/robotics/__tests__/professorDemo.test.ts` — 2 files / 4 tests passed; preview state is planner-free, release triggers complete-plan validation; default and rotated demos still DONE. `npm run lint` exit 0. Full `npm run verify` after this final code change: NOT STARTED.
 
 ## Final demo summary
 

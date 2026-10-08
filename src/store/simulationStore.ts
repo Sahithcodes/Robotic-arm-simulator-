@@ -77,7 +77,7 @@ interface SimulationState {
   simulatedObject: SimulatedObject;
   autonomousPlan: PickPlan | null;
   dropTarget: DropTarget | null;
-  setDropTarget: (target: DropTarget | null, snap?: boolean) => void;
+  setDropTarget: (target: DropTarget | null, snap?: boolean, preview?: boolean) => void;
   allowUnreachablePlacement: boolean;
   setAllowUnreachablePlacement: (enabled: boolean) => void;
   destinationPickArmed: boolean;
@@ -240,7 +240,7 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
   destinationPickArmed: false,
   setDestinationPickArmed: (armed) => set({ destinationPickArmed: armed }),
 
-  setDropTarget: (target, snap = false) => {
+  setDropTarget: (target, snap = false, preview = false) => {
     const state = get();
     if (state.isTaskPlaying) return;
     const requestedSurface=state.placementSurfaces.find((surface)=>surface.id===(target?.surfaceId??'table'));
@@ -253,6 +253,10 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
       return;
     }
     const normalized = requested ? { ...requested, ...(snapped ?? {}) } : null;
+    if(preview){
+      set({dropTarget:normalized,autonomousPlan:null,simulatedObject:{...state.simulatedObject,reachability:{reachable:false,reason:'Release marker to validate destination'}}});
+      return;
+    }
     const destination = normalized ? { ...normalized, yaw: degToRad(normalized.yaw) } : null;
     const plan = destination ? createPickPlan(state.dhTable, state.simulatedObject.position, state.jointAngles, destination, state.simulatedObject.rotation.yaw, true, state.placementSurfaces,state.simulatedObject.surfaceId??'table') : null;
     const pick = destination ? null : validatePickApproach(state.dhTable, state.simulatedObject.position, state.jointAngles, state.simulatedObject.rotation.yaw + Math.PI / 2);

@@ -4,6 +4,7 @@ import { planPickAndPlace } from '../autonomousPlanner';
 import { defaultTableSurface } from '../placementSurfaces';
 import { BOOK, HOME_JOINT_ANGLES } from '../task5';
 import { findDemoWorkspace } from '../demoWorkspace';
+import { useSimulationStore } from '../../store/simulationStore';
 
 describe('verified professor demo workspace', () => {
   it('measures complete-plan-valid target cells from the default book pose', () => {
@@ -19,4 +20,17 @@ describe('verified professor demo workspace', () => {
     console.log(`DEMO TARGET ANCHORS fullPlan=PASS positions=${JSON.stringify(anchors)} count=${anchors.length}; no rectangular area remains after 2 cm inset`);
     expect(valid.length).toBeGreaterThan(0); expect(workspace.safeCells.length).toBe(0);
   }, 120000);
+
+  it('defers full destination planning until the marker is released',()=>{
+    const store=useSimulationStore;
+    store.getState().setTablePreset('compact');store.getState().resetTask();
+    store.getState().setDropTarget({x:.61,y:0,yaw:0,surfaceId:'table'});
+    expect(store.getState().simulatedObject.reachability.reachable).toBe(true);
+    store.getState().setDropTarget({x:.62,y:.01,yaw:0,surfaceId:'table'},false,true);
+    expect(store.getState().autonomousPlan).toBeNull();
+    expect(store.getState().simulatedObject.reachability.reason).toBe('Release marker to validate destination');
+    store.getState().setDropTarget(store.getState().dropTarget,true);
+    expect(store.getState().simulatedObject.reachability.reachable).toBe(true);
+    console.log('DEMO TARGET DRAG preview=planner-free release=complete-plan-validated');
+  });
 });
