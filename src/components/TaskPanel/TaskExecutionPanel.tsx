@@ -108,7 +108,7 @@ export const TaskExecutionPanel: React.FC = () => {
         <option value="large">Large (experimental)</option>
       </select>
       <div className="readout-group">
-        <div className="readout-label">PLACEMENT SURFACES</div>
+        <div className="readout-label">PLACEMENT SURFACES · NON-TABLE SURFACES ARE EXPERIMENTAL</div>
         <div className="task-coordinates">Yaw 0° reachability (percent of valid surface area)</div>
         {placementSurfaces.map((surface)=>{const report=reachability[surface.id];const floorUnreachable=surface.id==='floor'&&report?.pickablePct===0;return <div className="task-coordinates" key={`reach-${surface.id}`}>{surface.name}: {report?.pickablePct===null||!report? 'Computing' : `${report.pickablePct.toFixed(1)}% pickable · ${report.placeablePct===null? 'computing placeability' : `${report.placeablePct.toFixed(1)}% placeable`}`}{floorUnreachable?' · Not reachable with this arm':''}</div>;})}
         {placementSurfaces.map((surface) => <div className="task-coordinates" key={surface.id}>
@@ -120,7 +120,7 @@ export const TaskExecutionPanel: React.FC = () => {
           </div>
           {surface.id!=='table'&&<button type="button" disabled={isTaskPlaying} onClick={()=>removePlacementSurface(surface.id)}>REMOVE</button>}
         </div>)}
-        <div className="task-buttons"><button type="button" disabled={isTaskPlaying} onClick={()=>addPlacementSurface('rectangle')}>ADD RECTANGLE</button><button type="button" disabled={isTaskPlaying} onClick={()=>addPlacementSurface('annular-sector')}>ADD ANNULAR SECTOR</button></div>
+        <div className="task-buttons"><button type="button" disabled={isTaskPlaying} onClick={()=>addPlacementSurface('rectangle')}>ADD EXPERIMENTAL RECTANGLE</button><button type="button" disabled={isTaskPlaying} onClick={()=>addPlacementSurface('annular-sector')}>ADD EXPERIMENTAL SECTOR</button></div>
         {surfaceEditError&&<div className="error-readout">{surfaceEditError}</div>}
       </div>
       <div className="readout-group">

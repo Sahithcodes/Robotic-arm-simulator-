@@ -26,6 +26,7 @@ describe('placement surfaces', () => {
   });
 
   it('invalidates pick and place cache keys when a surface moves or changes height', () => {
+    useSimulationStore.setState({ placementSurfaces: defaultPlacementSurfaces() });
     const surface=defaultPlacementSurfaces()[0];
     const base:PickabilityWorkerConfig={preset:'compact',dhTable:INITIAL_DH_TABLE,jointAngles:HOME_JOINT_ANGLES,yawRad:0,bookZ:surfaceBookZ(surface),surface};
     expect(pickabilityCacheKey(base)).not.toBe(pickabilityCacheKey({...base,surface:{...surface,z:surface.z+.1}}));
@@ -37,6 +38,7 @@ describe('placement surfaces', () => {
     expect(useSimulationStore.getState().autonomousPlan).toBeNull();
     useSimulationStore.getState().updatePlacementSurface('raised-platform',{z:oldHeight});
     useSimulationStore.setState({autonomousPlan:oldPlan});
+    useSimulationStore.getState().setTablePreset('compact');
   });
 
   it('reports default-surface pick and place planning samples',()=>{
