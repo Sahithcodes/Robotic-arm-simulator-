@@ -21,7 +21,7 @@ export const CanvasContainer: React.FC = () => {
   const [cameraView, setCameraView] = useState<CameraView>('perspective');
   const [cameraRevision, setCameraRevision] = useState(0);
   const cancelDragRef = React.useRef<() => void>(() => {});
-  const { tablePreset, showReachabilityOverlay, setShowReachabilityOverlay, showPerformanceDebug, setShowPerformanceDebug } = useSimulationStore(useShallow((s) => ({tablePreset:s.tablePreset,showReachabilityOverlay:s.showReachabilityOverlay,setShowReachabilityOverlay:s.setShowReachabilityOverlay,showPerformanceDebug:s.showPerformanceDebug,setShowPerformanceDebug:s.setShowPerformanceDebug})));
+  const { tablePreset, debugMode, showReachabilityOverlay, setShowReachabilityOverlay, showPerformanceDebug, setShowPerformanceDebug } = useSimulationStore(useShallow((s) => ({tablePreset:s.tablePreset,debugMode:s.debugMode,showReachabilityOverlay:s.showReachabilityOverlay,setShowReachabilityOverlay:s.setShowReachabilityOverlay,showPerformanceDebug:s.showPerformanceDebug,setShowPerformanceDebug:s.setShowPerformanceDebug})));
 
   useEffect(() => {
     setMounted(true);
@@ -63,11 +63,11 @@ export const CanvasContainer: React.FC = () => {
         ))}
       </div>
 
-      <div className="absolute top-16 left-2 z-10 flex gap-3 rounded bg-slate-900/80 px-2 py-1 text-[10px] font-mono text-slate-200">
+      {debugMode && <div className="absolute top-16 left-2 z-10 flex gap-3 rounded bg-slate-900/80 px-2 py-1 text-[10px] font-mono text-slate-200">
         <label><input type="checkbox" checked={showReachabilityOverlay} onChange={(event)=>setShowReachabilityOverlay(event.target.checked)} /> PICK OVERLAY</label>
         <label><input type="checkbox" checked={showPerformanceDebug} onChange={(event)=>setShowPerformanceDebug(event.target.checked)} /> PERF</label>
-      </div>
-      {showPerformanceDebug && <PerformanceReadout />}
+      </div>}
+      {debugMode && showPerformanceDebug && <PerformanceReadout />}
 
       <Canvas
         camera={{ position: [1.48, -2.0, 1.84], fov: 40, up: [0, 0, 1] }}

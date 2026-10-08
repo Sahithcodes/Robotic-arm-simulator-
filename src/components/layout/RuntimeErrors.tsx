@@ -1,6 +1,7 @@
 'use client';
 
 import React, { Component, ErrorInfo, ReactNode, useEffect, useState } from 'react';
+import { useSimulationStore } from '../../store/simulationStore';
 
 type RuntimeError = { message: string; stack: string };
 const subscribers = new Set<(error: RuntimeError) => void>();
@@ -20,6 +21,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, { failed: 
 
 export function RuntimeErrors() {
   const [errors, setErrors] = useState<RuntimeError[]>([]);
+  const debugMode=useSimulationStore((s)=>s.debugMode);
   useEffect(() => {
     const capture = (error: RuntimeError) => setErrors((current) => [...current, error]);
     subscribers.add(capture);
@@ -34,5 +36,6 @@ export function RuntimeErrors() {
   }, []);
   if (!errors.length) return null;
   const details = errors.map(({ message, stack }, index) => `${index + 1}. ${message}\n${stack}`).join('\n\n');
+  if(!debugMode)return <div role="alert" className="fixed bottom-2 right-2 z-50 max-w-xs rounded border border-red-500 bg-slate-950 p-2 text-xs text-red-200">Controller failed · {errors.at(-1)?.message}</div>;
   return <details className="fixed bottom-2 right-2 z-50 max-w-md rounded border border-red-500 bg-slate-950 p-2 text-xs text-red-200"><summary>Errors ({errors.length})</summary><pre className="max-h-48 overflow-auto whitespace-pre-wrap">{details}</pre><button type="button" onClick={() => void navigator.clipboard?.writeText(details)}>Copy errors</button></details>;
 }

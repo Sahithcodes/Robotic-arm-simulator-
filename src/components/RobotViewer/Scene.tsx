@@ -8,7 +8,6 @@ import { useShallow } from 'zustand/react/shallow';
 import { useSimulationStore } from '../../store/simulationStore';
 import { BOOK, GRIPPER, TABLE, TASK5_WAYPOINTS } from '../../robotics/task5';
 import { RobotKinematicChain, BookMesh } from './RobotKinematicChain';
-import { createPickPlan } from '../../robotics/autonomousPlanner';
 import { PickabilityGridShape, PickabilityWorkerConfig, pickabilityCacheKey } from '../../robotics/pickabilityGrid';
 import { getOverlayMetrics, recordAnimationFrame, recordMainThreadBlock, recordSceneRender, setOverlayMetrics } from '../../robotics/overlayMetrics';
 import { PlacementSurface, rayToNearestSurface, surfaceBookZ } from '../../robotics/placementSurfaces';
@@ -49,7 +48,6 @@ export const Scene: React.FC<{ cameraView: CameraView; cameraRevision: number; c
   const [isDragging, setIsDragging] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [ghostPosition, setGhostPosition] = useState<{x:number;y:number;z:number;surfaceId:string}|null>(null);
-  const [ghostValid, setGhostValid] = useState(false);
   const { camera, gl } = useThree();
   const { fkResult,isGripperOpen,gripperCloseWidth,showRobotDebug,showJointLabels,showGraspRegion,showPath,setBookPosition,taskMode,autonomousPlan,simulatedObject,setObjectDragging,setObjectSelected,checkObjectReachability,isTaskPlaying,dropTarget,setDropTarget,destinationPickArmed,setDestinationPickArmed,tablePreset,placementSurfaces } = useSimulationStore(useShallow((s)=>({fkResult:s.fkResult,isGripperOpen:s.isGripperOpen,gripperCloseWidth:s.gripperCloseWidth,showRobotDebug:s.showRobotDebug,showJointLabels:s.showJointLabels,showGraspRegion:s.showGraspRegion,showPath:s.showPath,setBookPosition:s.setBookPosition,taskMode:s.taskMode,autonomousPlan:s.autonomousPlan,simulatedObject:s.simulatedObject,setObjectDragging:s.setObjectDragging,setObjectSelected:s.setObjectSelected,checkObjectReachability:s.checkObjectReachability,isTaskPlaying:s.isTaskPlaying,dropTarget:s.dropTarget,setDropTarget:s.setDropTarget,destinationPickArmed:s.destinationPickArmed,setDestinationPickArmed:s.setDestinationPickArmed,tablePreset:s.tablePreset,placementSurfaces:s.placementSurfaces})));
   const tickTask = useSimulationStore((s) => s.tickTask);
@@ -85,17 +83,6 @@ export const Scene: React.FC<{ cameraView: CameraView; cameraRevision: number; c
     }
     setGhostPosition(null);
   }, [destinationPickArmed, gl, setDestinationPickArmed]);
-
-  useEffect(() => {
-    if (!destinationPickArmed || !ghostPosition) return;
-    const timer = window.setTimeout(() => {
-      const state = useSimulationStore.getState();
-      const target = { ...ghostPosition, yaw: state.dropTarget?.yaw ?? 0 };
-      const plan = createPickPlan(state.dhTable, state.simulatedObject.position, state.jointAngles, { ...target, yaw: target.yaw * Math.PI / 180 }, state.simulatedObject.rotation.yaw, true, state.placementSurfaces,state.simulatedObject.surfaceId??'table');
-      setGhostValid(plan.reachable);
-    }, 100);
-    return () => window.clearTimeout(timer);
-  }, [destinationPickArmed, ghostPosition]);
 
   useFrame((_, delta) => { recordAnimationFrame(); tickTask(Math.min(delta, 0.05)); });
 
@@ -149,8 +136,8 @@ export const Scene: React.FC<{ cameraView: CameraView; cameraRevision: number; c
       {!isTaskPlaying && placementSurfaces.map((surface)=><ReachabilityEnvelope key={surface.id} surface={surface} />)}
       {destinationPickArmed && placementSurfaces.map((surface)=><mesh key={surface.id} position={[surface.center.x,surface.center.y,surface.z+0.0005]} rotation={[0,0,surface.yaw]} onPointerMove={(event) => { event.stopPropagation(); const hit=rayToNearestSurface({origin:event.ray.origin,direction:event.ray.direction},placementSurfaces,simulatedObject.rotation.yaw); if(hit)setGhostPosition({...hit.point,surfaceId:hit.surfaceId}); }} onPointerDown={(event) => { event.stopPropagation(); const hit=rayToNearestSurface({origin:event.ray.origin,direction:event.ray.direction},placementSurfaces,simulatedObject.rotation.yaw); if(hit){const state=useSimulationStore.getState();setDropTarget({...hit.point,yaw:state.dropTarget?.yaw??0,surfaceId:hit.surfaceId},true);setDestinationPickArmed(false);} }}><planeGeometry args={[surface.size.width,surface.size.depth]} /><meshBasicMaterial transparent opacity={0} depthWrite={false} /></mesh>)}
       {destinationPickArmed && ghostPosition && <group position={[ghostPosition.x, ghostPosition.y, ghostPosition.z + 0.003]} rotation={[0,0,(dropTarget?.yaw ?? 0)*Math.PI/180]} raycast={() => null}>
-        <mesh raycast={() => null}><boxGeometry args={[BOOK.size.x, BOOK.size.y, 0.004]} /><meshBasicMaterial color={ghostValid ? '#49d877' : '#ed5f62'} wireframe /></mesh>
-        <mesh raycast={() => null} position={[0,0,0.003]}><planeGeometry args={[BOOK.size.x, BOOK.size.y]} /><meshBasicMaterial color={ghostValid ? '#49d877' : '#ed5f62'} transparent opacity={0.16} side={THREE.DoubleSide} /></mesh>
+        <mesh raycast={() => null}><boxGeometry args={[BOOK.size.x, BOOK.size.y, 0.004]} /><meshBasicMaterial color="#42d9e8" wireframe /></mesh>
+        <mesh raycast={() => null} position={[0,0,0.003]}><planeGeometry args={[BOOK.size.x, BOOK.size.y]} /><meshBasicMaterial color="#42d9e8" transparent opacity={0.12} side={THREE.DoubleSide} /></mesh>
       </group>}
       {dropTarget && <group position={[dropTarget.x, dropTarget.y, (dropTarget.z??(targetSurface?surfaceBookZ(targetSurface):0))+0.002]} rotation={[0, 0, dropTarget.yaw * Math.PI / 180]} onPointerDown={destinationPickArmed ? undefined : (event) => { if (isTaskPlaying) return; event.stopPropagation(); event.nativeEvent.preventDefault(); event.nativeEvent.stopImmediatePropagation(); dragPointerRef.current = event.pointerId; controlsRef.current && (controlsRef.current.enabled = false); (event.target as unknown as { setPointerCapture(pointerId: number): void }).setPointerCapture(event.pointerId); }} onPointerMove={destinationPickArmed ? undefined : (event) => { if (dragPointerRef.current !== event.pointerId) return; event.stopPropagation(); const hit=rayToNearestSurface({origin:event.ray.origin,direction:event.ray.direction},placementSurfaces,dropTarget.yaw*Math.PI/180); if(hit)setDropTarget({...dropTarget,...hit.point,surfaceId:hit.surfaceId}); }} onPointerUp={destinationPickArmed ? undefined : (event) => { if(dragPointerRef.current !== event.pointerId) return; dragPointerRef.current=null; if(controlsRef.current) controlsRef.current.enabled=true; setDropTarget(useSimulationStore.getState().dropTarget,true); (event.target as unknown as { releasePointerCapture(pointerId:number):void }).releasePointerCapture(event.pointerId); }}>
         <mesh raycast={destinationPickArmed ? () => null : undefined}><boxGeometry args={[BOOK.size.x, BOOK.size.y, 0.004]} /><meshBasicMaterial color="#42d9e8" wireframe /></mesh>

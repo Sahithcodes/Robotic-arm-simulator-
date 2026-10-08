@@ -26,6 +26,7 @@ const TelemetryStrip: React.FC = () => {
 
 export const MainLayout: React.FC = () => {
   const activeTab = useSimulationStore((s) => s.activeTab);
+  const debugMode = useSimulationStore((s) => s.debugMode);
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-[#171a1d] text-slate-100">
@@ -65,15 +66,14 @@ export const MainLayout: React.FC = () => {
             <ErrorBoundary>
             <div className="flex flex-col space-y-3">
               <TaskExecutionPanel />
-              <JointSliderPanel />
-              <FKDisplay />
+              {debugMode && <><JointSliderPanel /><FKDisplay /></>}
             </div>
             </ErrorBoundary>
           )}
         </section>
       </main>
 
-      <TelemetryStrip />
+      {debugMode && <TelemetryStrip />}
       <RuntimeErrors />
     </div>
   );

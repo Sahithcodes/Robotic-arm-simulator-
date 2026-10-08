@@ -26,6 +26,8 @@ import {
 } from '../robotics/task5';
 
 interface SimulationState {
+  debugMode: boolean;
+  setDebugMode: (enabled: boolean) => void;
   simulatorMode: 'manual' | 'predefined' | 'autonomous';
   setSimulatorMode: (mode: 'manual' | 'predefined' | 'autonomous') => void;
   tablePreset: TablePreset;
@@ -189,9 +191,9 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
     const defaultPose = defaultPickPose(state.dhTable, state.jointAngles, preset);
     Object.assign(BOOK.initialPosition, defaultPose);
     const surfaces=[{...defaultPlacementSurfaces()[0],center:{...TABLE.center},z:TABLE.height,size:{width:TABLE.width,depth:TABLE.depth}}];
-    set({ tablePreset: preset, placementSurfaces:surfaces, showReachabilityOverlay: preset === 'compact', dropTarget: null, autonomousPlan: null, taskPhase: 'IDLE', autonomousPhase: 'IDLE', pickStatus: 'IDLE', simulatedObject: { ...state.simulatedObject, position: { ...defaultPose },surfaceId:'table', rotation: { roll: 0, pitch: 0, yaw: 0 }, reachability: { reachable: true, reason: 'Reachable' }, state: 'onTable', graspState: 'on-table', isAttached: false, isGrasped: false } });
+    set({ tablePreset: preset, placementSurfaces:surfaces, showReachabilityOverlay: false, dropTarget: null, autonomousPlan: null, taskPhase: 'IDLE', autonomousPhase: 'IDLE', pickStatus: 'IDLE', simulatedObject: { ...state.simulatedObject, position: { ...defaultPose },surfaceId:'table', rotation: { roll: 0, pitch: 0, yaw: 0 }, reachability: { reachable: true, reason: 'Reachable' }, state: 'onTable', graspState: 'on-table', isAttached: false, isGrasped: false } });
   },
-  activeTab: 'robot',
+  activeTab: 'task',
   setActiveTab: (tab) => set({ activeTab: tab }),
 
   jointAngles: defaultAngles,
@@ -212,7 +214,9 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
   graspDebugLog: [],
   showJointLabels: false,
   showGraspRegion: false,
-  showReachabilityOverlay: true,
+  debugMode: false,
+  setDebugMode: (enabled) => set({debugMode:enabled}),
+  showReachabilityOverlay: false,
   showPerformanceDebug: false,
   showPath: true,
   taskMode: 'predefined',
@@ -244,6 +248,10 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
     const snapped = requested && snap && !state.allowUnreachablePlacement && requested.surfaceId==='table'
       ? findNearestValidDestination(state.dhTable, state.jointAngles, state.simulatedObject.position, state.simulatedObject.rotation.yaw, requested, degToRad(requested.yaw))
       : null;
+    if(requested&&snap&&!state.allowUnreachablePlacement&&requested.surfaceId==='table'&&!snapped){
+      set({pickStatus:'No verified target near that position'});
+      return;
+    }
     const normalized = requested ? { ...requested, ...(snapped ?? {}) } : null;
     const destination = normalized ? { ...normalized, yaw: degToRad(normalized.yaw) } : null;
     const plan = destination ? createPickPlan(state.dhTable, state.simulatedObject.position, state.jointAngles, destination, state.simulatedObject.rotation.yaw, true, state.placementSurfaces,state.simulatedObject.surfaceId??'table') : null;

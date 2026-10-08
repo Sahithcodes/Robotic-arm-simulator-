@@ -21,7 +21,7 @@ function reachabilityMessage(reason: string): string {
   return reason === 'Reachable' ? 'Ready to plan' : 'Plan required';
 }
 
-export const TaskExecutionPanel: React.FC = () => {
+const TaskExecutionPanelDebug: React.FC = () => {
   const [reachability,setReachability]=useState(getOverlayMetrics().surfaceReachability);
   useEffect(()=>subscribeOverlayMetrics((metrics)=>setReachability(metrics.surfaceReachability)),[]);
   const {
@@ -281,4 +281,75 @@ export const TaskExecutionPanel: React.FC = () => {
       </label>
     </section>
   );
+};
+
+const demoTargets = [
+  { label: 'TARGET A', x: 0.61, y: 0, yaw: 0 },
+  { label: 'TARGET B', x: 0.62, y: 0, yaw: 0 },
+  { label: 'TARGET C', x: 0.63, y: 0, yaw: 0 },
+];
+
+const ProfessorDemoPanel: React.FC<{ onDebug: () => void }> = ({ onDebug }) => {
+  const state = useThrottledSimulationSelector((s) => ({
+    simulatedObject: s.simulatedObject, dropTarget: s.dropTarget, pickStatus: s.pickStatus,
+    autonomousPlan: s.autonomousPlan, isTaskPlaying: s.isTaskPlaying, jointAngles: s.jointAngles, positionError:s.positionError,
+    fkResult: s.fkResult, dhTable: s.dhTable, setDropTarget: s.setDropTarget,
+    setBookYawDegrees: s.setBookYawDegrees, plan: s.planAutonomousPick,
+    execute: s.executeAutonomousPick, pause: s.pauseTask, reset: s.resetTask,
+    setTablePreset: s.setTablePreset, setPath: s.setShowPath,
+    destinationPickArmed: s.destinationPickArmed, setDestinationPickArmed: s.setDestinationPickArmed,
+  }));
+  const selectedTarget = state.dropTarget;
+  const controllerStatus = state.autonomousPlan?.reachable ? '✓ Target valid · trajectory planned'
+    : selectedTarget && !state.simulatedObject.reachability.reachable ? 'Target outside the verified workspace. Choose another target.'
+      : selectedTarget ? '✓ Target valid · ready to plan' : 'Select a target location.';
+  const loadDemo = (yaw: number, targetYaw: number) => {
+    state.setTablePreset('compact');
+    state.reset();
+    state.setBookYawDegrees(yaw);
+    state.setDestinationPickArmed(false);
+    state.setDropTarget({ ...demoTargets[0], y: targetYaw===90 ? -0.02 : demoTargets[0].y, yaw: targetYaw, surfaceId: 'table' });
+    state.setPath(true);
+    state.plan();
+  };
+  const resetDemo=()=>{state.reset();state.setDropTarget(null);state.setDestinationPickArmed(false);state.setPath(false);};
+  const ee = state.fkResult.endEffectorPose.position;
+  const release = state.autonomousPlan?.waypoints.find((waypoint) => waypoint.id === 'PLACE');
+  const targetEE = release?.position;
+  return <section className="control-panel professor-demo" aria-label="Robot controller">
+    <div className="panel-heading"><h2>ROBOT CONTROLLER</h2><button type="button" className="technical-button" onClick={onDebug}>DEBUG MODE</button></div>
+    <div className="readout-group"><div className="readout-label">OBJECT</div>
+      <div className="task-coordinates">X {state.simulatedObject.position.x.toFixed(3)} m · Y {state.simulatedObject.position.y.toFixed(3)} m · Z {state.simulatedObject.position.z.toFixed(4)} m<br/>Yaw {(state.simulatedObject.rotation.yaw * 180 / Math.PI).toFixed(1)}°</div>
+    </div>
+    <div className="readout-group"><div className="readout-label">VALID TARGET AREA · COMPACT TABLE</div>
+      <div className="task-buttons">{demoTargets.map((target) => <button key={target.label} type="button" disabled={state.isTaskPlaying} onClick={() => {state.setDestinationPickArmed(false);state.setDropTarget({ ...target, surfaceId: 'table' }, true);}}>{target.label}</button>)}</div>
+      <button type="button" className="technical-button" disabled={state.isTaskPlaying} onClick={() => state.setDestinationPickArmed(!state.destinationPickArmed)}>{state.destinationPickArmed ? 'CANCEL TARGET' : 'CUSTOM TARGET · CLICK TABLE'}</button>
+      {selectedTarget && <div className="task-coordinates">X {selectedTarget.x.toFixed(3)} m · Y {selectedTarget.y.toFixed(3)} m · Yaw {selectedTarget.yaw.toFixed(0)}°</div>}
+    </div>
+    <div className="error-readout" role="status">{controllerStatus}</div>
+    <div className="task-buttons">
+      <button type="button" disabled={!selectedTarget || !state.simulatedObject.reachability.reachable || state.isTaskPlaying} onClick={() => {state.setPath(true);state.plan();}}>PLAN</button>
+      <button type="button" disabled={!state.autonomousPlan?.reachable || state.isTaskPlaying} onClick={state.execute}>EXECUTE</button>
+      <button type="button" disabled={!state.isTaskPlaying} onClick={state.pause}>PAUSE</button>
+      <button type="button" disabled={state.isTaskPlaying} onClick={resetDemo}>RESET</button>
+    </div>
+    <div className="task-buttons">
+      <button type="button" disabled={state.isTaskPlaying} onClick={() => loadDemo(0, 0)}>DEMO PICK &amp; PLACE</button>
+      <button type="button" disabled={state.isTaskPlaying} onClick={() => loadDemo(45, 90)}>ROTATED DEMO · 45° → 90°</button>
+    </div>
+    <div className="task-coordinates">STATE: <b>{state.pickStatus}</b><br/>
+      TARGET EE: {targetEE ? `${targetEE.x.toFixed(3)}, ${targetEE.y.toFixed(3)}, ${targetEE.z.toFixed(3)} m` : 'Not planned'}<br/>
+      ACTUAL EE: {ee.x.toFixed(3)}, {ee.y.toFixed(3)}, {ee.z.toFixed(3)} m<br/>
+      POSITION ERROR: {state.positionError.toFixed(4)} m
+    </div>
+    <div className="readout-label">JOINTS · DEG</div>
+    <div className="task-coordinates">{state.jointAngles.map((angle, index) => `J${index + 1} ${(angle * 180 / Math.PI).toFixed(1)}°`).join(' · ')}</div>
+    {state.autonomousPlan?.reachable && <div className="task-coordinates">PLAN: IK solved · collision-free · grasp {state.autonomousPlan.graspCandidate} · {state.autonomousPlan.waypoints.length} trajectory waypoints</div>}
+  </section>;
+};
+
+export const TaskExecutionPanel: React.FC = () => {
+  const {debug,setDebug}=useThrottledSimulationSelector((s)=>({debug:s.debugMode,setDebug:s.setDebugMode}));
+  return debug ? <><button type="button" className="technical-button" onClick={() => setDebug(false)}>DEMO MODE</button><TaskExecutionPanelDebug /></>
+    : <ProfessorDemoPanel onDebug={() => setDebug(true)} />;
 };

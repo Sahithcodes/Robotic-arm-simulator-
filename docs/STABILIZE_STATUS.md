@@ -47,3 +47,15 @@
 | G. Large preset, 20 plans | PASS — report only | Evidence #10: 10 planned, 10 rejected; no Large execution acceptance claim. |
 
 `npm run verify` runs lint, default Vitest, production build, then the acceptance suite. Current branch is `stabilize`; Steps 5–7 are committed separately. No browser was available for visual or runtime verification.
+
+## Professor demo stabilization
+
+- **PASS — Demo controls, evidence #11:** default tab is Task / Demo Mode; runtime surfaces remain Table only; reachability and performance overlays are hidden until Debug Mode. Demo controls expose three fixed targets, click-to-select with planner-backed nearest-valid snapping, Plan/Execute/Pause/Reset, known-good unrotated task, and rotated task. Plan display is enabled only after a complete plan succeeds.
+- **PASS — Professor demo, evidence #11:** `npm test -- --run src/robotics/__tests__/professorDemo.test.ts src/robotics/__tests__/demoWorkspace.test.ts src/components/layout/ssrSmoke.test.tsx src/robotics/__tests__/sceneSurfaceDefaults.test.ts` passed (4 files, 5 tests), and `npm run lint` passed. Printed default run: source `(0.795, -0.035, 0.7925)`, target `(0.610, 0.000, 0.7925)`, all states PREGRASP through DONE, attachment and transport observed, 0.000 mm position error, 0.000° yaw error, DONE. Rotated run: 45° book to 90° target at `(0.610,-0.020)`, attached and transported, 0.000° final yaw error, DONE.
+- **FAIL — rectangular safety-inset workspace, evidence #11:** `findDemoWorkspace()` swept 441 points at 1 cm over X `[0.57,0.77]`, Y `[-0.14,0.06]` for the default book and full plan. 34/441 points passed; sampled valid bounds X `[0.61,0.65]`, Y `[-0.08,0.00]`; largest all-valid rectangle is 12 cells at centers X `[0.62,0.63]`, Y `[-0.05,0.00]`. A 20 mm inset leaves 0 points. Therefore the UI does not claim this is a continuous safe rectangle: its three named target buttons are full-plan-checked/snapped for the current object, and custom clicks snap to the nearest full-plan-valid point. Broader arbitrary-source target coverage remains unverified.
+- **NOT VERIFIED — Browser visual verification, evidence #11:** no browser automation tool is available. The interactive visual book grasp, viewport trajectory, and on-screen error presentation have not been visually inspected.
+
+## Evidence log (continued)
+
+11. `npm test -- --run src/robotics/__tests__/professorDemo.test.ts src/robotics/__tests__/demoWorkspace.test.ts src/components/layout/ssrSmoke.test.tsx src/robotics/__tests__/sceneSurfaceDefaults.test.ts` — 4 files, 5 passed; `npm run lint` exit 0. Workspace and both professor-demo traces printed above. Browser automation capability query returned no browser/Playwright tool.
+12. Final `npm run verify` and explicit `npm test -- --run src/robotics/__tests__/professorDemo.test.ts` — NOT STARTED at this checkpoint.
