@@ -64,7 +64,7 @@
 13. Target-marker drag performance fix: `npm test -- --run src/robotics/__tests__/demoWorkspace.test.ts src/robotics/__tests__/professorDemo.test.ts` — 2 files / 4 tests passed; preview state is planner-free, release triggers complete-plan validation; default and rotated demos still DONE. `npm run lint` exit 0; the full final verification follows at #14.
 14. Final post-change `npm run verify` — exit 0; lint passed, default suite 24 files / 79 passed / 1 skipped, Next production build passed, stabilization acceptance 8 passed. `npm test -- --run professorDemo.test.ts` — 1 file / 2 tests passed. This supersedes the earlier full-suite count at evidence #12.
 15. Full Compact-table workspace sweep: `npm test -- --run src/robotics/__tests__/demoWorkspace.test.ts` — 1 file / 2 tests passed; actual planner printed 34/735 valid cells, 12-cell largest rectangle, 0 cells after 20 mm inset, and all three named target anchors passed the complete planner. This corrects the earlier partial-X sweep recorded at #11.
-16. Final `npm run verify` after extending the workspace sweep to all Compact-table X: NOT STARTED.
+16. Final post-sweep `npm run verify` — PASS, exit 0; lint passed, 24 files / 79 tests passed / 1 skipped, production build passed, acceptance suite 8 passed. The full-table workspace test ran as part of Vitest and printed 34/735 valid cells, 12-cell largest rectangle, 0 points after 20 mm inset, and all three planner-verified anchors. This is the final repository verification.
 
 ## Final demo summary
 
